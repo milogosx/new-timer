@@ -18,10 +18,14 @@ flowchart TD
   B --> D["TimerScreen"]
   B --> E["WorkoutLibrary"]
   B --> F["WorkoutEditor / WarmupEditor / CardioEditor"]
+  C --> M["useBackgroundMusicState hook"]
   D --> G["useTimer hook"]
-  G --> H["timerLogic + storage + wakeLock + audioManager"]
+  D --> N["exerciseProgress helpers"]
+  D --> M
+  G --> H["timerLogic + timerTickMath + sessionSnapshot + storage + wakeLock + audioManager"]
   C --> I["storage + workoutStorage + audioManager"]
   E --> J["workoutStorage"]
+  F --> O["exerciseSanitizer helpers"]
   F --> J
   J --> K["localStorage (workouts/warmups/cardios + schema keys)"]
   H --> L["localStorage (active session/settings/audio prefs)"]
@@ -50,10 +54,12 @@ flowchart TD
 - Exercise checklist state for current view: `src/components/TimerScreen.jsx`.
 - Workouts/warmups/cardios and schemas: `src/utils/workoutStorage.js`.
 - Session/settings/audio prefs: `src/utils/storage.js`.
+- Screen flow constants: `src/constants/appState.js`.
 
 ## Extension Points
 
 - Add screen flows by extending App screen switch and route handlers.
 - Add timer behaviors inside `useTimer` while preserving invariants.
+- Keep timer math/persistence payload shaping in pure helpers (`timerTickMath`, `sessionSnapshot`).
 - Add persistence fields through `storage.js` and migration-safe readers.
 - Add workout entity fields by normalizing defaults and migration handlers in `workoutStorage.js`.

@@ -44,10 +44,16 @@ Primary layers:
 
 - `src/components/*`: screen and UI components.
 - `src/hooks/useTimer.js`: core timer state machine (countdown/running/paused/resume).
+- `src/hooks/useBackgroundMusicState.js`: shared BGM state subscription for Home/Timer screens.
 - `src/utils/storage.js`: session/settings/audio preference persistence.
 - `src/utils/workoutStorage.js`: workouts/warm-ups/cardio CRUD + schema migration.
+- `src/utils/sessionSnapshot.js`: pure session payload construction for persistence.
+- `src/utils/timerTickMath.js`: pure timer interval fast-forward math.
+- `src/utils/exerciseProgress.js`: checklist progress normalization/toggle helpers.
+- `src/utils/exerciseSanitizer.js`: shared editor save-time exercise normalization.
 - `src/utils/audioManager.js`: bell/countdown SFX + procedural background music.
 - `src/utils/wakeLock.js`: Wake Lock integration.
+- `src/constants/appState.js`: app screen and editor-return constants.
 
 ## State Ownership (High Level)
 
