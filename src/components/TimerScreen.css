@@ -28,6 +28,10 @@
   animation: none;
 }
 
+.timer-screen.battery-saver-active .ctrl-btn {
+  transition: none;
+}
+
 /* Header — 2-row layout */
 .timer-header {
   width: 100%;

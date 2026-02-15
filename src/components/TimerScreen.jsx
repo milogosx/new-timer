@@ -67,7 +67,7 @@ export default function TimerScreen({
     sessionMinutes,
     intervalSeconds,
     sessionMetadata,
-    batterySaverMode ? 250 : 0
+    batterySaverMode ? 500 : 0
   );
 
   const isActive = timer.status === 'running' || timer.status === 'paused' || timer.status === 'countdown';
@@ -222,7 +222,7 @@ export default function TimerScreen({
       </header>
 
       {/* Session Progress Bar */}
-      {isActive && (
+      {isActive && !batterySaverMode && (
         <div className="session-progress-bar">
           <div className="session-progress-fill" style={{ width: `${sessionProgressPct}%` }} />
         </div>
