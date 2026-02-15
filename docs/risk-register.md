@@ -6,7 +6,7 @@ Last updated: February 15, 2026
 
 | ID | Risk | Impact | Likelihood | Current Signal | Mitigation Direction | Status |
 |---|---|---|---|---|---|---|
-| R1 | Per-frame active-session persistence | Performance/battery drain on mobile | High | `useTimer` persists on every tick | Throttle persistence + persist on transitions | Open |
+| R1 | Active-session persistence overhead under prolonged runs | Performance/battery drain on mobile | Medium | Running-state writes are throttled (~1s) with forced writes on transitions/checklist changes | Monitor cadence and tune interval if field data warrants | Mitigated (monitoring) |
 | R2 | Browser wake lock variability | Screen sleep during active sessions | Medium | API unsupported or denied on some devices | Graceful fallback UX + capability messaging | Open |
 | R3 | Audio autoplay/visibility policy differences | Missing countdown/bgm behavior | Medium | Browser gesture policy differences | Keep unlock-on-interaction strategy and fallback behavior | Open |
 | R4 | Migration semantics ambiguity for canonical workouts | Data expectation mismatch | Medium | Tests previously disagreed with behavior | Document policy and lock tests to policy | Open |
@@ -28,6 +28,5 @@ Last updated: February 15, 2026
 
 ## Deferred Items
 
-- Implement throttled session persistence cadence.
 - Define explicit support matrix for browsers/devices.
 - Add optional E2E smoke flow for critical timer lifecycle.

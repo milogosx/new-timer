@@ -8,8 +8,9 @@ import { saveSessionState, clearSessionState } from '../utils/storage';
 import { requestWakeLock, releaseWakeLock } from '../utils/wakeLock';
 import { buildSessionSnapshot } from '../utils/sessionSnapshot';
 import { advanceIntervalState } from '../utils/timerTickMath';
+import { shouldPersistRunningSession } from '../utils/sessionPersistenceCadence';
 
-const TICK_MS = 250; // Update 4x/sec for smooth display
+const RUNNING_PERSIST_MIN_INTERVAL_MS = 1000;
 
 function monotonicNow() {
   if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
@@ -64,6 +65,7 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
   const countdownTimeoutsRef = useRef([]);
   const countdownTokenRef = useRef(0);
   const sessionMetadataRef = useRef(sessionMetadata);
+  const lastRunningPersistAtRef = useRef(0);
 
   // Keep refs in sync
   useEffect(() => {
@@ -101,11 +103,24 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
     return base;
   }, []);
 
-  const persistSession = useCallback((overrideStatus = statusRef.current) => {
+  const persistSession = useCallback((overrideStatus = statusRef.current, options = {}) => {
+    const force = options.force === true;
     if (overrideStatus !== 'running' && overrideStatus !== 'paused') return false;
     if (sessionStartWallRef.current === null || intervalStartWallRef.current === null) return false;
 
     const nowWall = Date.now();
+    if (
+      overrideStatus === 'running'
+      && !force
+      && !shouldPersistRunningSession({
+        lastPersistAtMs: lastRunningPersistAtRef.current,
+        nowMs: nowWall,
+        minIntervalMs: RUNNING_PERSIST_MIN_INTERVAL_MS,
+      })
+    ) {
+      return false;
+    }
+
     const elapsedMs = getSessionElapsedMs();
     const intervalElapsedMs = getIntervalElapsedMs();
 
@@ -124,6 +139,9 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
       isQuickAdd: isQuickAddRef.current,
       metadata: sessionMetadataRef.current,
     }));
+    if (overrideStatus === 'running') {
+      lastRunningPersistAtRef.current = nowWall;
+    }
     return true;
   }, [defaultIntervalSec, getIntervalElapsedMs, getSessionElapsedMs, sessionDurationSec]);
 
@@ -261,7 +279,7 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
 
     requestWakeLock();
     startTicking();
-    persistSession('running');
+    persistSession('running', { force: true });
   }, [defaultIntervalSec, persistSession, startTicking]);
 
   // Handle visibility change to immediately catch up if we fell behind
@@ -355,7 +373,7 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
     setStatus('paused');
     statusRef.current = 'paused';
     stopTicking();
-    persistSession('paused');
+    persistSession('paused', { force: true });
   }, [getIntervalElapsedMs, getSessionElapsedMs, persistSession, stopTicking]);
 
   const resume = useCallback(() => {
@@ -369,7 +387,7 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
     statusRef.current = 'running';
     requestWakeLock();
     startTicking();
-    persistSession('running');
+    persistSession('running', { force: true });
   }, [persistSession, startTicking]);
 
   const stopTimers = useCallback(() => {
@@ -393,6 +411,7 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
     circleColorRef.current = 'black';
     currentIntervalDurationRef.current = defaultIntervalSec;
     isQuickAddRef.current = false;
+    lastRunningPersistAtRef.current = 0;
 
     setStatus('idle');
     statusRef.current = 'idle';
@@ -426,7 +445,7 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
     intervalStartWallRef.current = nowWall;
     setIntervalRemaining(seconds);
 
-    persistSession('running');
+    persistSession('running', { force: true });
   }, [persistSession]);
 
   // Resume from saved session on mount
@@ -482,13 +501,13 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
       statusRef.current = 'paused';
       stopTicking();
       releaseWakeLock();
-      persistSession('paused');
+      persistSession('paused', { force: true });
     } else {
       setStatus('running');
       statusRef.current = 'running';
       requestWakeLock();
       startTicking();
-      persistSession('running');
+      persistSession('running', { force: true });
     }
 
     return true;

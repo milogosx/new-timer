@@ -30,7 +30,7 @@ Last updated: February 15, 2026
 - Context: Current per-frame persistence increases performance/battery risk.
 - Alternatives considered: keep per-frame writes; persist only on pause/stop.
 - Consequence: Reduced write load with small tradeoff in worst-case progress loss window.
-- Status: accepted (implementation pending)
+- Status: implemented
 
 ### D-003
 

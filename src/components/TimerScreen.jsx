@@ -80,7 +80,7 @@ export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, 
 
   useEffect(() => {
     if (!isActive) return;
-    persistSession();
+    persistSession(undefined, { force: true });
   }, [exerciseProgress, isActive, persistSession, workout?.id, workout?.name]);
 
   function handleResume() {
