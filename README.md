@@ -82,10 +82,10 @@ Schema versions:
 
 ## Deploy Caveats
 
-- Netlify config currently lives in `.netlify/netlify.toml` with:
+- Netlify config currently lives in `netlify.toml` with:
   - build command: `npm run build`
   - publish dir: `dist` (portable repo-relative path)
-- `.netlify/` can include Netlify-generated local state; treat it as environment tooling output and review before committing unrelated changes.
+- `.netlify/` is local Netlify state and is intentionally gitignored.
 
 ## Current Health Status
 
