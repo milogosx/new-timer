@@ -23,6 +23,7 @@ Last updated: February 15, 2026
 - Workout profile boot hydration is best-effort and runs without blocking first interactive screen render.
 - Workout profile writes must update local cache first, then queue debounced cloud sync writes.
 - Cloud profile timestamps (`eliteTimer_profile_updated_at` vs remote `updatedAt`) determine local-vs-remote winner on boot.
+- Failed cloud writes must be retried; they must not be silently discarded.
 
 ## Workout Data Invariants
 
@@ -33,6 +34,7 @@ Last updated: February 15, 2026
   - `rest >= 0`
 - Deleting warm-ups or cardios must remove orphaned references from workouts.
 - Schema version keys are the migration contract and must be updated atomically with data writes.
+- Deleted canonical defaults are tracked via tombstone keys and must not be auto-reinserted on load.
 
 ## UI/Theme Invariants
 

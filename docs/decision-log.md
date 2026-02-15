@@ -58,3 +58,30 @@ Last updated: February 15, 2026
 - Alternatives considered: localStorage only; external hosted database.
 - Consequence: Cross-device durability improves immediately; introduces serverless dependency and endpoint-hardening risk.
 - Status: implemented
+
+### D-006
+
+- Date: 2026-02-15
+- Decision: Canonical workout/warm-up/cardio deletions are persisted as tombstone ID lists.
+- Context: Canonical defaults were being reinserted after deletion during migration/upsert flows.
+- Alternatives considered: hard-delete defaults from canonical seed; prevent deleting defaults.
+- Consequence: User intent for deleting defaults persists across reloads/devices while preserving canonical seed for reset flows.
+- Status: implemented
+
+### D-007
+
+- Date: 2026-02-15
+- Decision: Cloud profile sync uses client-timestamp conflict ordering and retry-on-failure lifecycle flushing.
+- Context: Eventual-consistency windows and dropped writes caused occasional stale rehydration.
+- Alternatives considered: keep best-effort fire-and-forget writes; synchronous/blocking startup hydration.
+- Consequence: Better durability and lower chance of stale-state resurrection, with slightly more sync complexity.
+- Status: implemented
+
+### D-008
+
+- Date: 2026-02-15
+- Decision: Add auth gate for profile endpoints before broader (non-trusted) sharing.
+- Context: Current endpoints are unauthenticated and acceptable only for single-user/trusted use.
+- Alternatives considered: keep endpoints open; simple static secret only.
+- Consequence: Requires selecting auth model and rollout plan before expansion.
+- Status: accepted (deferred)

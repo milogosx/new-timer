@@ -35,6 +35,20 @@ npm run build
 npm run preview
 ```
 
+## Engineer Handoff Quickstart
+
+First 30-60 minutes:
+
+1. Read `/Users/camiloperezsetright/Projects/new-timer/docs/architecture-map.md` for module boundaries and data flow.
+2. Read `/Users/camiloperezsetright/Projects/new-timer/docs/invariants.md` for must-not-break behavior.
+3. Read `/Users/camiloperezsetright/Projects/new-timer/docs/decision-log.md` for why key choices were made.
+4. Read `/Users/camiloperezsetright/Projects/new-timer/docs/risk-register.md` for open risks and mitigation direction.
+5. Run:
+   - `npm run lint`
+   - `npm test`
+   - `npm run build`
+   - `npm run test:e2e`
+
 ## Architecture Snapshot
 
 Entry points:
@@ -117,14 +131,31 @@ Behavior:
   - publish dir: `dist` (portable repo-relative path)
 - Netlify Functions are expected in `netlify/functions` and are required for cross-device workout profile persistence.
 - Running `npm run dev` (Vite only) does not serve Netlify Functions; cloud sync falls back to local-only behavior in that mode.
+- Use `npx netlify dev` when validating function-backed sync behavior locally.
 - `.netlify/` is local Netlify state and is intentionally gitignored.
+
+## Current Priorities / Deferred Work
+
+- Priority now:
+  - keep sync durability stable (no data reversion on reload/device switch)
+  - keep docs and tests in lockstep with behavior changes
+- Deferred (must-do before broader sharing):
+  - add authentication/authorization guard for profile endpoints
+  - choose and implement auth model (Netlify Identity JWT or signed token gate)
+
+## Recent Delivery Timeline
+
+- Phase 1: Codebase scan and architecture/risk/state-ownership mapping.
+- Phase 2: Structure-focused refactor for clarity/modularity (no intentional behavior changes).
+- Phase 3: Bug-fix and durability pass (lint/tests baseline, sync persistence hardening, Netlify portability, cloud profile reliability).
 
 ## Current Health Status
 
 Verified on **February 15, 2026**:
 
 - `npm run lint`: passing
-- `npm test`: passing (23/23)
+- `npm test`: passing (28/28)
 - `npm run build`: passing
+- `npm run test:e2e`: passing
 
 This status reflects the current branch state and should be re-verified after behavior changes.

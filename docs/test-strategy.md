@@ -7,7 +7,7 @@ Last updated: February 15, 2026
 - Unit tests (primary):
   - timer derivation and formatting (`src/utils/timerLogic.js`)
   - storage/migration contracts (`src/utils/workoutStorage.js`)
-  - cloud-sync fallback safety (`src/utils/cloudProfileSync.js`) (planned)
+  - cloud profile merge ordering contracts (`netlify/profileStore.js`)
   - deterministic waveform geometry (`src/utils/ecgWaveform.js`)
   - session cadence and resume policy contracts (`src/utils/sessionPersistenceCadence.js`, `src/utils/sessionResumePolicy.js`)
 - Integration-focused unit tests (targeted additions):
@@ -50,6 +50,7 @@ Last updated: February 15, 2026
   - mismatched session config shows safe discard path
 - Cloud sync checks:
   - edit workout name on device A, reload on device B, verify update appears as default
+  - delete canonical default workout (e.g., `default-engine`), reload, verify it does not reappear
   - edit warm-up/cardio exercises on mobile, reload app, verify persistence
   - temporarily block network, save local edit, restore network, verify next online boot preserves latest profile winner by timestamp
 
@@ -90,7 +91,7 @@ Last updated: February 15, 2026
 ## Known Gaps
 
 - E2E currently covers one primary happy-path flow (Chromium only).
-- Cloud profile sync behavior is currently validated manually (no function-mocked integration test yet).
+- Cloud profile sync client behavior is still primarily validated manually (limited automated coverage on browser lifecycle events).
 - No automated performance regression checks for persistence cadence.
 - Wake lock/audio behavior still depends on manual cross-device verification.
 - Hook-level timer lifecycle transitions still rely mostly on unit contracts and manual smoke (no dedicated hook test harness yet).

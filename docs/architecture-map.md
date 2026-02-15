@@ -39,6 +39,7 @@ flowchart TD
 - Session start:
   - Home screen reads settings/workout templates from storage.
   - `cloudProfileSync` hydrates workout profile from Netlify (if reachable) in background.
+  - Home/Library can re-render after hydration without blocking initial app interaction.
   - App passes selected session config to Timer screen.
   - Timer screen initializes exercise progress and timer hook.
 - Active session:
@@ -51,6 +52,8 @@ flowchart TD
   - Library/editors perform CRUD via `workoutStorage`.
   - Migration/upsert logic runs during load and updates schema version keys in local cache.
   - Save operations queue debounced profile writes to Netlify Functions (write-through sync).
+  - Default-entity deletions are tracked as tombstone ID lists to prevent default resurrection.
+  - Retry/lifecycle flush handlers (`online`, `visibilitychange`, `pagehide`) improve write durability.
 
 ## State Ownership
 
@@ -60,6 +63,7 @@ flowchart TD
 - Workouts/warmups/cardios and schemas: `src/utils/workoutStorage.js`.
 - Cloud profile hydration/write queue: `src/utils/cloudProfileSync.js`.
 - Netlify profile endpoints: `netlify/functions/profile-read.js`, `netlify/functions/profile-write.js`.
+- Cloud merge/conflict policy: `netlify/profileStore.js`.
 - Session/settings/audio prefs: `src/utils/storage.js`.
 - Screen flow constants: `src/constants/appState.js`.
 

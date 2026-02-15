@@ -12,7 +12,8 @@ Last updated: February 15, 2026
 | R4 | Migration semantics ambiguity for canonical workouts | Data expectation mismatch | Medium | Tests previously disagreed with behavior | Document policy and lock tests to policy | Open |
 | R5 | Netlify local state drift in `.netlify/` | Environment-specific config noise | Medium | Tooling can write local state artifacts | Keep portable config only; review before commit | Open |
 | R6 | Docs and tests drifting from implementation | Slower onboarding, unsafe change confidence | Medium | Baseline drift occurred before this pass | Treat docs as living; update during behavior changes | Open |
-| R7 | Unauthenticated cloud profile endpoints | Unauthorized profile overwrite risk | Medium | Endpoints are same-origin and profile-id scoped, but no user auth gate yet | Add auth gate (Netlify Identity/JWT or signed token workflow) before multi-user/public expansion | Open |
+| R7 | Unauthenticated cloud profile endpoints | Unauthorized profile overwrite risk | Medium | Endpoints are same-origin and profile-id scoped, but no user auth gate yet | Add auth gate (Netlify Identity/JWT or signed token workflow) before multi-user/public expansion | Open (deferred gate) |
+| R8 | Eventual-consistency lag in cloud profile reads | Temporary reversion perception after edits | Medium | Observed stale-read behavior during rapid edit/reload testing | Client timestamp conflict policy + tombstones + retry/lifecycle flushes; continue monitoring | Mitigated (monitoring) |
 
 ## Monitoring Signals
 
@@ -20,6 +21,7 @@ Last updated: February 15, 2026
 - User reports of timer drift, resume mismatch, or sleep/audio interruptions.
 - Unexpected schema migrations or missing defaults after app updates.
 - Unexpected cloud profile resets or edits from untrusted clients.
+- Reports of defaults briefly reappearing after delete/edit and reload.
 
 ## Mitigations
 
@@ -27,8 +29,10 @@ Last updated: February 15, 2026
 - Require invariant/doc updates alongside behavior changes.
 - Add targeted regression tests when touching timer, persistence, or migration code.
 - Track deferred bugs separately from structure-only refactors.
+- Treat endpoint auth as release gate before broader sharing.
 
 ## Deferred Items
 
 - Define explicit support matrix for browsers/devices.
 - Add optional E2E smoke flow for critical timer lifecycle.
+- Choose and implement endpoint auth model (see D-008).
