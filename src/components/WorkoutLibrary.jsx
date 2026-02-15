@@ -91,7 +91,6 @@ export default function WorkoutLibrary({
   function confirmResetAll() {
     const defaults = resetAllWorkouts();
     setWorkouts(sortWorkouts(defaults));
-    setWorkouts(sortWorkouts(defaults));
     const defaultWarmups = resetAllWarmups();
     setWarmups(defaultWarmups);
     const defaultCardios = resetAllCardios();
