@@ -1,0 +1,753 @@
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Montserrat:wght@700;800;900&family=Roboto+Mono:wght@500;700&display=swap');
+
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS — Dark Industrial Luxury
+   ═══════════════════════════════════════════════ */
+:root {
+  /* ── Core Palette ── */
+  --gold: #FF2D78;
+  --gold-light: #FF5A9A;
+  --gold-dark: #D41E63;
+  --cream: #16161E;
+  --cream-warm: #1E1E2A;
+  --yellow-card: #00FFFF;
+  --yellow-dim: #00CCCC;
+  --white: #F0F0F5;
+  --black: #0A0A0F;
+
+  /* ── Accent Colors ── */
+  --pink: #FF2D78;
+  --pink-dark: #D41E63;
+  --pink-stroke: #FF2D78;
+  --cyan: #00FFFF;
+  --cyan-bright: #00FFFF;
+  --cyan-soft: #66FFFF;
+  --teal: #00BFA5;
+  --green: #00E676;
+  --green-dark: #00C853;
+  --green-light: #69F0AE;
+  --orange: #FF9100;
+  --warmup-bg: #1A1A26;
+  --warmup-dark: #12121A;
+  --warmup-accent: #00FFFF;
+  --cardio-bg: #261A1A;
+  --cardio-dark: #1A1212;
+  --cardio-accent: #FF6E40;
+
+  /* ── Surface Colors ── */
+  --surface-base: #0A0A0F;
+  --surface-card: #16161E;
+  --surface-elevated: #1E1E2A;
+  --surface-overlay: #242436;
+
+  /* ── Text Colors ── */
+  --text-primary: #F0F0F5;
+  --text-secondary: #8888AA;
+  --text-muted: #555570;
+  --text-faint: #3A3A50;
+  --text-on-dark: #F0F0F5;
+  --text-on-pink: #FFFFFF;
+  --text-on-green: #0A0A0F;
+
+  /* ── Typography ── */
+  --font-display: 'Outfit', 'Montserrat', 'Arial Black', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Roboto Mono', 'SF Mono', 'Courier New', monospace;
+
+  /* Font Sizes — clear hierarchy */
+  --text-2xs: 9px;
+  --text-xs: 10px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 24px;
+  --text-hero: 54px;
+
+  /* ── Spacing — 8px grid ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ── Borders ── */
+  --border-sm: 2px solid rgba(255, 255, 255, 0.08);
+  --border-md: 2px solid rgba(255, 255, 255, 0.12);
+  --border-lg: 2px solid rgba(255, 255, 255, 0.16);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+
+  /* ── Shadows — soft glows & depth ── */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-2xl: 0 12px 48px rgba(0, 0, 0, 0.7);
+  --shadow-pressed: 0 1px 4px rgba(0, 0, 0, 0.4);
+  --shadow-none: 0 0 0 transparent;
+  /* Subtle inner depth for cards */
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  /* ── Glow Shadows — accent-colored ── */
+  --glow-cyan: 0 0 20px rgba(0, 255, 255, 0.3);
+  --glow-pink: 0 0 20px rgba(255, 45, 120, 0.3);
+  --glow-green: 0 0 20px rgba(0, 230, 118, 0.3);
+  --glow-cyan-lg: 0 0 40px rgba(0, 255, 255, 0.2), 0 0 80px rgba(0, 255, 255, 0.1);
+  --glow-pink-lg: 0 0 40px rgba(255, 45, 120, 0.2), 0 0 80px rgba(255, 45, 120, 0.1);
+
+  /* ── Transitions ── */
+  --ease-press: transform 0.1s ease, box-shadow 0.1s ease;
+  --ease-color: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  --ease-fade: opacity 0.2s ease;
+
+  /* ── Background ── */
+  --bg-gradient: linear-gradient(168deg,
+      #0A0A0F 0%,
+      #0E0E18 38%,
+      #0A0A0F 62%,
+      #08080D 100%);
+  --bg-gradient-radial: radial-gradient(ellipse 120% 80% at 50% 20%,
+      #14142A 0%,
+      #0A0A0F 50%,
+      #060610 100%);
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--surface-base);
+  background-image: var(--bg-gradient);
+  color: var(--text-primary);
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* SVG noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100dvh;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+#root {
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+/* Selection color */
+::selection {
+  background: var(--pink);
+  color: var(--white);
+}
+
+/* Scrollbar styling — dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+/* Remove number input spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* ═══════════════════════════════════════════════
+   LIGHT THEME — Original Gold Neobrutalist
+   Activated via data-theme="light" on <html>
+   ═══════════════════════════════════════════════ */
+[data-theme="light"] {
+  /* ── Core Palette ── */
+  --gold: #FFBF00;
+  --gold-light: #FFCF33;
+  --gold-dark: #E6AC00;
+  --cream: #F5E6D3;
+  --cream-warm: #F2E0C8;
+  --yellow-card: #F4D03F;
+  --yellow-dim: #e0cc5a;
+  --white: #FFFFFF;
+  --black: #000000;
+
+  /* ── Accent Colors ── */
+  --pink: #E91E63;
+  --pink-dark: #C2185B;
+  --pink-stroke: #E91E63;
+  --cyan: #4DD0E1;
+  --cyan-bright: #00FFFF;
+  --cyan-soft: #63E9FF;
+  --teal: #00897B;
+  --green: #4CAF50;
+  --green-dark: #2E7D32;
+  --green-light: #a5d6a7;
+  --orange: #ff9800;
+  --warmup-bg: #D9C3A1;
+  --warmup-dark: #c4ad8a;
+  --warmup-accent: #26C6DA;
+  --cardio-bg: #D9B8A1;
+  --cardio-dark: #c4a28a;
+  --cardio-accent: #FF9800;
+
+  /* ── Surface Colors ── */
+  --surface-base: #FFBF00;
+  --surface-card: #F5E6D3;
+  --surface-elevated: #FFFFFF;
+  --surface-overlay: #F4D03F;
+
+  /* ── Text Colors ── */
+  --text-primary: #000000;
+  --text-secondary: #555555;
+  --text-muted: #888888;
+  --text-faint: #bbbbbb;
+  --text-on-dark: #FFFFFF;
+  --text-on-pink: #FFFFFF;
+  --text-on-green: #FFFFFF;
+
+  /* ── Typography ── */
+  --font-display: 'Montserrat', 'Arial Black', sans-serif;
+
+  /* ── Borders — neobrutalist solid black ── */
+  --border-sm: 2px solid #000000;
+  --border-md: 3px solid #000000;
+  --border-lg: 4px solid #000000;
+
+  /* ── Shadows — hard offset, no blur ── */
+  --shadow-sm: 2px 2px 0 #000000;
+  --shadow-md: 3px 3px 0 #000000;
+  --shadow-lg: 4px 4px 0 #000000;
+  --shadow-xl: 6px 6px 0 #000000;
+  --shadow-2xl: 8px 8px 0 #000000;
+  --shadow-pressed: 1px 1px 0 #000000;
+  --shadow-none: 0 0 0 #000000;
+  --shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  /* ── Glow Shadows — disabled in light mode ── */
+  --glow-cyan: none;
+  --glow-pink: none;
+  --glow-green: none;
+  --glow-cyan-lg: none;
+  --glow-pink-lg: none;
+
+  /* ── Background ── */
+  --bg-gradient: linear-gradient(168deg,
+      #FFBF00 0%,
+      #FFCF33 38%,
+      #FFBF00 62%,
+      #E6AC00 100%);
+  --bg-gradient-radial: radial-gradient(ellipse 120% 80% at 50% 20%,
+      #FFCF33 0%,
+      #FFBF00 50%,
+      #E6AC00 100%);
+}
+
+/* Light theme body overrides */
+[data-theme="light"] body::before {
+  opacity: 0.02;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="light"] * {
+  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+}
+
+/* Light theme — restore neobrutalist hero title */
+[data-theme="light"] .home-hero-title {
+  color: #000000;
+  -webkit-text-fill-color: #000000;
+  text-shadow: none;
+}
+
+[data-theme="light"] .home-hero-sub {
+  color: #555555;
+  opacity: 0.5;
+}
+
+[data-theme="light"] .home-screen {
+  background: var(--gold);
+  background-image: var(--bg-gradient-radial);
+}
+
+/* Light theme — restore hard shadow cards */
+[data-theme="light"] .workout-card {
+  background: var(--cream);
+  border: 3px solid #000000;
+  border-left: 5px solid var(--pink);
+  box-shadow: 3px 3px 0 #000000;
+}
+
+[data-theme="light"] .workout-card:active {
+  box-shadow: 1px 1px 0 #000000;
+  transform: translate(2px, 2px);
+}
+
+/* Light theme — settings bar */
+[data-theme="light"] .settings-compact {
+  background: var(--cream);
+  border: 3px solid #000000;
+  box-shadow: 3px 3px 0 #000000;
+}
+
+[data-theme="light"] .settings-compact-input {
+  background: #FFFFFF;
+  border: 2px solid #000000;
+  color: #000000;
+}
+
+[data-theme="light"] .settings-compact-input:focus {
+  border-color: var(--pink);
+  box-shadow: none;
+}
+
+/* Light theme — buttons */
+[data-theme="light"] .timer-only-btn {
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+}
+
+[data-theme="light"] .timer-only-btn:active {
+  box-shadow: 1px 1px 0 #000000;
+  transform: translate(1px, 1px);
+}
+
+[data-theme="light"] .workout-manage-btn {
+  background: var(--cream);
+  color: #000000;
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+}
+
+[data-theme="light"] .workout-create-btn {
+  border: 3px dashed #000000;
+  color: #555555;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .workout-show-more {
+  border: 2px dashed #000000;
+  color: #555555;
+}
+
+/* Light theme — music FAB */
+[data-theme="light"] .home-music-fab {
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+}
+
+[data-theme="light"] .home-music-fab.is-on {
+  background: var(--cream);
+  color: var(--teal);
+  box-shadow: 2px 2px 0 #000000;
+  border-color: #000000;
+}
+
+[data-theme="light"] .home-music-fab.is-off {
+  background: var(--cream);
+  color: #888888;
+}
+
+/* Light theme — timer screen */
+[data-theme="light"] .timer-screen {
+  background: var(--gold);
+  background-image: var(--bg-gradient-radial);
+}
+
+[data-theme="light"] .back-btn {
+  background: var(--cream);
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+  color: #000000;
+}
+
+[data-theme="light"] .ctrl-btn {
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+}
+
+[data-theme="light"] .ctrl-btn:active:not(:disabled) {
+  box-shadow: 1px 1px 0 #000000;
+  transform: translate(1px, 1px);
+  filter: none;
+}
+
+[data-theme="light"] .ctrl-btn-main {
+  box-shadow: 3px 3px 0 #000000;
+}
+
+[data-theme="light"] .ctrl-btn-reset {
+  background: var(--cream);
+  color: #000000;
+}
+
+[data-theme="light"] .ctrl-btn-pulse {
+  animation: none;
+}
+
+/* Light theme — timer circle */
+[data-theme="light"] .timer-circle-inner {
+  border: 3px solid #000000;
+}
+
+/* Light theme — session progress */
+[data-theme="light"] .session-progress-fill {
+  background: var(--pink);
+  box-shadow: none;
+}
+
+/* Light theme — complete overlay */
+[data-theme="light"] .complete-box {
+  background: var(--cream);
+  border: 3px solid #000000;
+  box-shadow: 6px 6px 0 #000000;
+}
+
+[data-theme="light"] .complete-stat {
+  background: #FFFFFF;
+  border: 2px solid #000000;
+}
+
+[data-theme="light"] .complete-stat-value {
+  color: var(--pink);
+}
+
+[data-theme="light"] .complete-done-btn {
+  border: 2px solid #000000;
+  box-shadow: 3px 3px 0 #000000;
+}
+
+/* Light theme — dialogs */
+[data-theme="light"] .dialog-box {
+  background: var(--cream);
+  border: 3px solid #000000;
+  box-shadow: 6px 6px 0 #000000;
+}
+
+[data-theme="light"] .dialog-btn {
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+}
+
+[data-theme="light"] .dialog-btn-cancel {
+  background: #FFFFFF;
+  color: #000000;
+}
+
+/* Light theme — checklist */
+[data-theme="light"] .checklist-header {
+  border: 3px solid #000000;
+  box-shadow: none;
+}
+
+[data-theme="light"] .checklist-list {
+  border: 3px solid #000000;
+  border-top: none;
+}
+
+[data-theme="light"] .checklist-card {
+  background: var(--cream);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .checklist-main-check,
+[data-theme="light"] .checklist-set-check {
+  border: 2px solid #000000;
+  background: #FFFFFF;
+}
+
+[data-theme="light"] .checklist-main-check.checked,
+[data-theme="light"] .checklist-set-check.checked {
+  box-shadow: none;
+}
+
+[data-theme="light"] .checklist-rest {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  color: #000000;
+}
+
+/* Light theme — quick add buttons */
+[data-theme="light"] .quick-add-btn {
+  background: var(--cream);
+  color: #000000;
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+}
+
+[data-theme="light"] .quick-add-btn:active:not(:disabled) {
+  box-shadow: 1px 1px 0 #000000;
+  transform: translate(1px, 1px);
+}
+
+[data-theme="light"] .custom-time-input {
+  background: #FFFFFF;
+  border: 2px solid #000000;
+  color: #000000;
+}
+
+[data-theme="light"] .custom-time-input:focus {
+  border-color: var(--pink);
+  box-shadow: none;
+}
+
+[data-theme="light"] .custom-time-submit {
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+}
+
+/* Light theme — workout library */
+[data-theme="light"] .workout-library {
+  background: var(--gold);
+  background-image: var(--bg-gradient);
+}
+
+[data-theme="light"] .lib-card {
+  background: var(--cream);
+  border: 3px solid #000000;
+  box-shadow: 3px 3px 0 #000000;
+}
+
+[data-theme="light"] .lib-card-pinned {
+  border-color: var(--pink);
+}
+
+[data-theme="light"] .lib-action-btn {
+  border: 2px solid #000000;
+  box-shadow: 2px 2px 0 #000000;
+}
+
+[data-theme="light"] .lib-action-btn:active {
+  box-shadow: 1px 1px 0 #000000;
+  transform: translate(1px, 1px);
+}
+
+[data-theme="light"] .lib-create-btn {
+  border: 3px solid #000000;
+  box-shadow: 3px 3px 0 #000000;
+}
+
+[data-theme="light"] .lib-action-edit {
+  background: #FFFFFF;
+  color: #000000;
+}
+
+/* Light theme — workout editor */
+[data-theme="light"] .workout-editor {
+  background: var(--gold);
+  background-image: var(--bg-gradient);
+}
+
+[data-theme="light"] .editor-section {
+  background: var(--cream);
+  border: 3px solid #000000;
+  box-shadow: 3px 3px 0 #000000;
+}
+
+[data-theme="light"] .editor-text-input {
+  background: #FFFFFF;
+  border: 2px solid #000000;
+  color: #000000;
+}
+
+[data-theme="light"] .editor-text-input:focus {
+  border-color: var(--pink);
+  box-shadow: none;
+}
+
+[data-theme="light"] .editor-type-btn {
+  background: #FFFFFF;
+  border: 2px solid #000000;
+  color: #555555;
+  box-shadow: 2px 2px 0 #000000;
+}
+
+[data-theme="light"] .editor-type-active {
+  background: var(--pink);
+  color: #FFFFFF;
+}
+
+[data-theme="light"] .editor-exercise-card {
+  background: #FFFFFF;
+  border: 2px solid #000000;
+}
+
+[data-theme="light"] .editor-field-input {
+  background: var(--cream);
+  border: 2px solid #000000;
+  color: #000000;
+}
+
+[data-theme="light"] .editor-field-input:focus {
+  border-color: var(--pink);
+  box-shadow: none;
+}
+
+[data-theme="light"] .editor-save-btn {
+  border: 2px solid #000000;
+  box-shadow: 3px 3px 0 #000000;
+}
+
+[data-theme="light"] .editor-move-btn {
+  background: var(--cream);
+  border: 2px solid #000000;
+  color: #000000;
+}
+
+[data-theme="light"] .editor-remove-btn {
+  border: 2px solid #000000;
+}
+
+[data-theme="light"] .editor-add-btn {
+  border: 2px dashed #000000;
+  color: #555555;
+}
+
+/* Light theme — warmup editor */
+[data-theme="light"] .warmup-editor {
+  background: var(--gold);
+  background-image: var(--bg-gradient);
+}
+
+[data-theme="light"] .warmup-section {
+  background: var(--warmup-bg);
+  border: 3px solid #000000;
+  box-shadow: 3px 3px 0 #000000;
+}
+
+[data-theme="light"] .warmup-exercise-card {
+  background: var(--cream);
+}
+
+[data-theme="light"] .warmup-add-btn {
+  border: 2px dashed #000000;
+}
+
+[data-theme="light"] .checklist-warmup-badge {
+  color: #FFFFFF;
+}
+
+/* Light theme — cardio editor */
+[data-theme="light"] .cardio-editor {
+  background: var(--gold);
+  background-image: var(--bg-gradient);
+}
+
+[data-theme="light"] .cardio-section {
+  background: var(--cardio-bg);
+  border: 3px solid #000000;
+  box-shadow: 3px 3px 0 #000000;
+}
+
+[data-theme="light"] .cardio-exercise-card {
+  background: var(--cream);
+}
+
+[data-theme="light"] .cardio-add-btn {
+  border: 2px dashed #000000;
+}
+
+[data-theme="light"] .checklist-cardio-badge {
+  color: #FFFFFF;
+}
+
+/* Light theme — Library Buttons (High Contrast) */
+[data-theme="light"] .lib-action-edit {
+  background: var(--black);
+  color: var(--white);
+  border-color: var(--black);
+}
+
+[data-theme="light"] .lib-action-delete {
+  background: var(--pink);
+  color: #FFFFFF;
+  border-color: var(--pink);
+}
+
+/* Light theme — App shell */
+[data-theme="light"] .app {
+  background: var(--gold);
+}
+
+/* Light theme — wake lock badge */
+[data-theme="light"] .wake-lock-badge {
+  border: 2px solid #2D2D2D;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme="light"] .wake-lock-badge.active {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #2D2D2D;
+  color: #2E7D32;
+}
+
+[data-theme="light"] .wake-lock-badge.inactive {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #2D2D2D;
+  color: #C62828;
+}

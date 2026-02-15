@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glass Tap Sound Tester</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #0A0A0F;
+            color: #F0F0F5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+
+        p.sub {
+            color: #8888AA;
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+
+        .sounds {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .sound-card {
+            background: #16161E;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .sound-card.active {
+            border-color: #FF2D78;
+            box-shadow: 0 0 20px rgba(255, 45, 120, 0.15);
+        }
+
+        .play-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #FF2D78;
+            border: none;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: transform 0.1s;
+        }
+
+        .play-btn:active {
+            transform: scale(0.92);
+        }
+
+        .sound-info {
+            flex: 1;
+        }
+
+        .sound-name {
+            font-weight: 800;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .sound-desc {
+            color: #8888AA;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .current-badge {
+            background: #FF2D78;
+            color: white;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🥂 GLASS TAP VARIATIONS</h1>
+    <p class="sub">Tap each button to preview different glass chime styles</p>
+    <div class="sounds" id="sounds"></div>
+
+    <script>
+        let ctx = null;
+        function getCtx() {
+            if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (ctx.state === 'suspended') ctx.resume();
+            return ctx;
+        }
+
+        const sounds = [
+            {
+                name: "Glass Tap — Original",
+                desc: "A7/E8/C8 harmonics, medium decay, warm resonance",
+                current: true,
+                gen: (c) => {
+                    const sr = c.sampleRate, dur = 0.7, len = sr * dur;
+                    const buf = c.createBuffer(2, len, sr);
+                    for (let ch = 0; ch < 2; ch++) {
+                        const d = buf.getChannelData(ch);
+                        for (let i = 0; i < len; i++) {
+                            const t = i / sr;
+                            const atk = Math.min(1, t / 0.001);
+                            const env = atk * Math.exp(-t * 5);
+                            let s = Math.sin(2 * Math.PI * 3520 * t) * 0.4
+                                + Math.sin(2 * Math.PI * 5280 * t) * 0.3
+                                + Math.sin(2 * Math.PI * 7040 * t) * 0.15
+                                + Math.sin(2 * Math.PI * 8800 * t) * Math.exp(-t * 10) * 0.1;
+                            d[i] = s * env * 0.45;
+                        }
+                    }
+                    return buf;
+                }
+            },
+            {
+                name: "Glass Tap — High Pitch",
+                desc: "Higher fundamental (C8), more shimmer, delicate and airy",
+                gen: (c) => {
+                    const sr = c.sampleRate, dur = 0.6, len = sr * dur;
+                    const buf = c.createBuffer(2, len, sr);
+                    for (let ch = 0; ch < 2; ch++) {
+                        const d = buf.getChannelData(ch);
+                        for (let i = 0; i < len; i++) {
+                            const t = i / sr;
+                            const atk = Math.min(1, t / 0.0008);
+                            const env = atk * Math.exp(-t * 6);
+                            let s = Math.sin(2 * Math.PI * 4186 * t) * 0.4
+                                + Math.sin(2 * Math.PI * 6272 * t) * 0.3
+                                + Math.sin(2 * Math.PI * 8372 * t) * 0.15
+                                + Math.sin(2 * Math.PI * 10548 * t) * Math.exp(-t * 12) * 0.08;
+                            d[i] = s * env * 0.42;
+                        }
+                    }
+                    return buf;
+                }
+            },
+            {
+                name: "Glass Tap — Deep",
+                desc: "Lower pitch (E7), richer resonance, more body and warmth",
+                gen: (c) => {
+                    const sr = c.sampleRate, dur = 0.8, len = sr * dur;
+                    const buf = c.createBuffer(2, len, sr);
+                    for (let ch = 0; ch < 2; ch++) {
+                        const d = buf.getChannelData(ch);
+                        for (let i = 0; i < len; i++) {
+                            const t = i / sr;
+                            const atk = Math.min(1, t / 0.001);
+                            const env = atk * Math.exp(-t * 4);
+                            let s = Math.sin(2 * Math.PI * 2637 * t) * 0.45
+                                + Math.sin(2 * Math.PI * 3951 * t) * 0.3
+                                + Math.sin(2 * Math.PI * 5274 * t) * 0.15
+                                + Math.sin(2 * Math.PI * 7902 * t) * Math.exp(-t * 8) * 0.08;
+                            d[i] = s * env * 0.48;
+                        }
+                    }
+                    return buf;
+                }
+            },
+            {
+                name: "Glass Tap — Short & Crisp",
+                desc: "Very fast decay, instant glass tick, minimal ring",
+                gen: (c) => {
+                    const sr = c.sampleRate, dur = 0.35, len = sr * dur;
+                    const buf = c.createBuffer(2, len, sr);
+                    for (let ch = 0; ch < 2; ch++) {
+                        const d = buf.getChannelData(ch);
+                        for (let i = 0; i < len; i++) {
+                            const t = i / sr;
+                            const atk = Math.min(1, t / 0.0005);
+                            const env = atk * Math.exp(-t * 12);
+                            let s = Math.sin(2 * Math.PI * 3520 * t) * 0.4
+                                + Math.sin(2 * Math.PI * 5280 * t) * 0.35
+                                + Math.sin(2 * Math.PI * 8800 * t) * 0.15;
+                            d[i] = s * env * 0.5;
+                        }
+                    }
+                    return buf;
+                }
+            },
+            {
+                name: "Glass Tap — Long Ring",
+                desc: "Slow decay, the glass keeps singing — elegant and sustained",
+                gen: (c) => {
+                    const sr = c.sampleRate, dur = 1.2, len = sr * dur;
+                    const buf = c.createBuffer(2, len, sr);
+                    for (let ch = 0; ch < 2; ch++) {
+                        const d = buf.getChannelData(ch);
+                        for (let i = 0; i < len; i++) {
+                            const t = i / sr;
+                            const atk = Math.min(1, t / 0.001);
+                            const env = atk * Math.exp(-t * 2.5);
+                            let s = Math.sin(2 * Math.PI * 3520 * t) * 0.35
+                                + Math.sin(2 * Math.PI * 5280 * t) * 0.3
+                                + Math.sin(2 * Math.PI * 7040 * t) * 0.2
+                                + Math.sin(2 * Math.PI * 8800 * t) * Math.exp(-t * 6) * 0.1;
+                            d[i] = s * env * 0.4;
+                        }
+                    }
+                    return buf;
+                }
+            },
+            {
+                name: "Glass Tap — Bright Shimmer",
+                desc: "Extra high overtones for a sparkly, fairy-like quality",
+                gen: (c) => {
+                    const sr = c.sampleRate, dur = 0.7, len = sr * dur;
+                    const buf = c.createBuffer(2, len, sr);
+                    for (let ch = 0; ch < 2; ch++) {
+                        const d = buf.getChannelData(ch);
+                        for (let i = 0; i < len; i++) {
+                            const t = i / sr;
+                            const atk = Math.min(1, t / 0.0008);
+                            const env = atk * Math.exp(-t * 5.5);
+                            let s = Math.sin(2 * Math.PI * 3520 * t) * 0.3
+                                + Math.sin(2 * Math.PI * 5280 * t) * 0.25
+                                + Math.sin(2 * Math.PI * 7920 * t) * 0.2
+                                + Math.sin(2 * Math.PI * 10560 * t) * Math.exp(-t * 8) * 0.12
+                                + Math.sin(2 * Math.PI * 13200 * t) * Math.exp(-t * 14) * 0.06;
+                            d[i] = s * env * 0.45;
+                        }
+                    }
+                    return buf;
+                }
+            },
+            {
+                name: "Glass Tap — Double Strike",
+                desc: "Two rapid taps close together, like flicking a crystal glass twice",
+                gen: (c) => {
+                    const sr = c.sampleRate, dur = 0.8, len = sr * dur;
+                    const buf = c.createBuffer(2, len, sr);
+                    for (let ch = 0; ch < 2; ch++) {
+                        const d = buf.getChannelData(ch);
+                        for (let i = 0; i < len; i++) {
+                            const t = i / sr;
+                            const atk1 = Math.min(1, t / 0.001);
+                            const env1 = atk1 * Math.exp(-t * 6);
+                            let s1 = (Math.sin(2 * Math.PI * 3520 * t) * 0.4 + Math.sin(2 * Math.PI * 5280 * t) * 0.3
+                                + Math.sin(2 * Math.PI * 7040 * t) * 0.12) * env1;
+                            const t2 = t - 0.08;
+                            let s2 = 0;
+                            if (t2 > 0) {
+                                const atk2 = Math.min(1, t2 / 0.001);
+                                const env2 = atk2 * Math.exp(-t2 * 5);
+                                s2 = (Math.sin(2 * Math.PI * 4186 * t) * 0.35 + Math.sin(2 * Math.PI * 6272 * t) * 0.25
+                                    + Math.sin(2 * Math.PI * 8372 * t) * 0.1) * env2;
+                            }
+                            d[i] = (s1 + s2) * 0.38;
+                        }
+                    }
+                    return buf;
+                }
+            },
+            {
+                name: "Glass Tap — Pure Tone",
+                desc: "Minimal overtones, just the essential ring — clean and focused",
+                gen: (c) => {
+                    const sr = c.sampleRate, dur = 0.6, len = sr * dur;
+                    const buf = c.createBuffer(2, len, sr);
+                    for (let ch = 0; ch < 2; ch++) {
+                        const d = buf.getChannelData(ch);
+                        for (let i = 0; i < len; i++) {
+                            const t = i / sr;
+                            const atk = Math.min(1, t / 0.001);
+                            const env = atk * Math.exp(-t * 5);
+                            let s = Math.sin(2 * Math.PI * 4186 * t) * 0.55
+                                + Math.sin(2 * Math.PI * 6272 * t) * 0.12;
+                            d[i] = s * env * 0.48;
+                        }
+                    }
+                    return buf;
+                }
+            }
+        ];
+
+        const container = document.getElementById('sounds');
+        sounds.forEach((sound, idx) => {
+            const card = document.createElement('div');
+            card.className = 'sound-card' + (sound.current ? ' active' : '');
+            card.innerHTML = `
+        <button class="play-btn" data-idx="${idx}">&#9654;</button>
+        <div class="sound-info">
+          <div class="sound-name">${sound.name}</div>
+          <div class="sound-desc">${sound.desc}</div>
+        </div>
+        ${sound.current ? '<span class="current-badge">ACTIVE</span>' : ''}
+      `;
+            container.appendChild(card);
+        });
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.play-btn');
+            if (!btn) return;
+            const idx = parseInt(btn.dataset.idx);
+            const c = getCtx();
+            const buf = sounds[idx].gen(c);
+            const src = c.createBufferSource();
+            const gain = c.createGain();
+            gain.gain.value = 0.85;
+            src.buffer = buf;
+            src.connect(gain);
+            gain.connect(c.destination);
+            src.start(0);
+            if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+        });
+    </script>
+</body>
+
+</html>

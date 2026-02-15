@@ -1,0 +1,35 @@
+/* CardioEditor inherits most styles from WorkoutEditor.css */
+/* Only overrides for cardio-specific styling go here */
+
+.cardio-editor {
+    min-height: 100dvh;
+    background: var(--surface-base);
+    background-image: var(--bg-gradient);
+    padding: 0 var(--space-4) var(--space-10);
+}
+
+.cardio-section {
+    background: var(--cardio-bg);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5) var(--space-4);
+    margin-bottom: var(--space-4);
+    box-shadow: var(--shadow-lg), var(--shadow-inset);
+}
+
+.cardio-exercise-card {
+    background: var(--surface-elevated);
+}
+
+.cardio-num {
+    color: var(--cardio-accent);
+}
+
+.cardio-add-btn {
+    background: var(--cardio-bg);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.cardio-add-btn:active {
+    background: var(--cardio-dark);
+}

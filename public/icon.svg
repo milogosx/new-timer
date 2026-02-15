@@ -1,0 +1,27 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Black background with rounded corners for maskable -->
+  <rect width="512" height="512" rx="64" fill="#000000"/>
+
+  <!-- Timer circle (white outline) -->
+  <circle cx="256" cy="280" r="150" fill="none" stroke="#FFFFFF" stroke-width="14"/>
+
+  <!-- Timer crown/button at top -->
+  <rect x="238" y="108" width="36" height="36" rx="8" fill="#FFFFFF"/>
+
+  <!-- Small tick marks at 12, 3, 6, 9 o'clock -->
+  <line x1="256" y1="145" x2="256" y2="165" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+  <line x1="256" y1="395" x2="256" y2="415" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+  <line x1="121" y1="280" x2="141" y2="280" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+  <line x1="371" y1="280" x2="391" y2="280" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Lightning bolt with cyan-to-pink gradient -->
+  <defs>
+    <linearGradient id="bolt" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00FFFF"/>
+      <stop offset="100%" stop-color="#FF1493"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M 295 170 L 225 280 L 265 280 L 205 410 L 310 275 L 265 275 Z"
+        fill="url(#bolt)"/>
+</svg>

@@ -1,0 +1,35 @@
+/* WarmupEditor inherits most styles from WorkoutEditor.css */
+/* Only overrides for warmup-specific styling go here */
+
+.warmup-editor {
+  min-height: 100dvh;
+  background: var(--surface-base);
+  background-image: var(--bg-gradient);
+  padding: 0 var(--space-4) var(--space-10);
+}
+
+.warmup-section {
+  background: var(--warmup-bg);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-4);
+  margin-bottom: var(--space-4);
+  box-shadow: var(--shadow-lg), var(--shadow-inset);
+}
+
+.warmup-exercise-card {
+  background: var(--surface-elevated);
+}
+
+.warmup-num {
+  color: var(--warmup-accent);
+}
+
+.warmup-add-btn {
+  background: var(--warmup-bg);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.warmup-add-btn:active {
+  background: var(--warmup-dark);
+}
