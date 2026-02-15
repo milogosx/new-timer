@@ -5,6 +5,12 @@ import ExerciseChecklist from './ExerciseChecklist';
 import { useTimer } from '../hooks/useTimer';
 import { useBackgroundMusicState } from '../hooks/useBackgroundMusicState';
 import { formatTime } from '../utils/timerLogic';
+import {
+  createExerciseProgress,
+  normalizeExerciseProgress,
+  toggleExerciseProgress,
+  toggleSetProgress,
+} from '../utils/exerciseProgress';
 import { loadSessionState, clearSessionState } from '../utils/storage';
 import { isWakeLockActive, isWakeLockSupported } from '../utils/wakeLock';
 import {
@@ -17,37 +23,6 @@ function haptic(style = 'light') {
   if (navigator.vibrate) {
     navigator.vibrate(style === 'heavy' ? 50 : 15);
   }
-}
-
-function createExerciseProgress(exercises) {
-  return exercises.map((ex) => ({
-    completed: false,
-    setsCompleted: Array(ex.sets).fill(false),
-  }));
-}
-
-function normalizeExerciseProgress(exercises, savedProgress) {
-  if (!Array.isArray(savedProgress)) {
-    return createExerciseProgress(exercises);
-  }
-
-  return exercises.map((exercise, index) => {
-    const fallback = {
-      completed: false,
-      setsCompleted: Array(exercise.sets).fill(false),
-    };
-    const saved = savedProgress[index];
-    if (!saved || !Array.isArray(saved.setsCompleted)) return fallback;
-
-    const setsCompleted = Array.from({ length: exercise.sets }, (_, setIndex) =>
-      Boolean(saved.setsCompleted[setIndex])
-    );
-
-    return {
-      completed: setsCompleted.every(Boolean),
-      setsCompleted,
-    };
-  });
 }
 
 export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, onBack }) {
@@ -180,31 +155,12 @@ export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, 
 
   const handleToggleSet = useCallback((exerciseIdx, setIdx) => {
     haptic();
-    setExerciseProgress((prev) => {
-      const updated = prev.map((p, i) => {
-        if (i !== exerciseIdx) return p;
-        const newSets = [...p.setsCompleted];
-        newSets[setIdx] = !newSets[setIdx];
-        const allDone = newSets.every(Boolean);
-        return { completed: allDone, setsCompleted: newSets };
-      });
-      return updated;
-    });
+    setExerciseProgress((prev) => toggleSetProgress(prev, exerciseIdx, setIdx));
   }, []);
 
   const handleToggleExercise = useCallback((exerciseIdx) => {
     haptic('heavy');
-    setExerciseProgress((prev) => {
-      const updated = prev.map((p, i) => {
-        if (i !== exerciseIdx) return p;
-        const newCompleted = !p.completed;
-        return {
-          completed: newCompleted,
-          setsCompleted: p.setsCompleted.map(() => newCompleted),
-        };
-      });
-      return updated;
-    });
+    setExerciseProgress((prev) => toggleExerciseProgress(prev, exerciseIdx));
   }, []);
 
   const mainButtonLabel = {
