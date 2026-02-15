@@ -76,6 +76,29 @@ async function runSmokeFlow() {
   }
 }
 
+async function stopServer(server) {
+  if (!server || server.killed) return;
+
+  const closePromise = new Promise((resolve) => {
+    server.once('close', resolve);
+    server.once('exit', resolve);
+  });
+
+  server.kill('SIGTERM');
+  const didCloseGracefully = await Promise.race([
+    closePromise.then(() => true),
+    sleep(3000).then(() => false),
+  ]);
+
+  if (!didCloseGracefully) {
+    server.kill('SIGKILL');
+    await Promise.race([
+      closePromise,
+      sleep(3000),
+    ]);
+  }
+}
+
 async function main() {
   const server = spawn(
     'npm',
@@ -91,7 +114,7 @@ async function main() {
     await runSmokeFlow();
     console.log('E2E smoke flow passed.');
   } finally {
-    server.kill('SIGTERM');
+    await stopServer(server);
   }
 }
 
