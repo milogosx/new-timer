@@ -3,13 +3,11 @@ import TimerCircle from './TimerCircle';
 import QuickAddButtons from './QuickAddButtons';
 import ExerciseChecklist from './ExerciseChecklist';
 import { useTimer } from '../hooks/useTimer';
+import { useBackgroundMusicState } from '../hooks/useBackgroundMusicState';
 import { formatTime } from '../utils/timerLogic';
 import { loadSessionState, clearSessionState } from '../utils/storage';
 import { isWakeLockActive, isWakeLockSupported } from '../utils/wakeLock';
 import {
-  getBackgroundMusicState,
-  initBackgroundMusic,
-  subscribeBackgroundMusic,
   toggleBackgroundMusic,
 } from '../utils/audioManager';
 import { getWarmupExercisesForWorkout, getCardioExercisesForWorkout } from '../utils/workoutStorage';
@@ -55,7 +53,7 @@ function normalizeExerciseProgress(exercises, savedProgress) {
 export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, onBack }) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showBackConfirm, setShowBackConfirm] = useState(false);
-  const [bgmState, setBgmState] = useState(() => getBackgroundMusicState());
+  const bgmState = useBackgroundMusicState();
   const initialSavedSession = useMemo(() => {
     const saved = loadSessionState();
     if (!saved || !saved.sessionActive) return null;
@@ -109,13 +107,6 @@ export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, 
     if (!isActive) return;
     persistSession();
   }, [exerciseProgress, isActive, persistSession, workout?.id, workout?.name]);
-
-  useEffect(() => {
-    initBackgroundMusic();
-    return subscribeBackgroundMusic((nextState) => {
-      setBgmState(nextState);
-    });
-  }, []);
 
   function handleResume() {
     if (savedSession) {

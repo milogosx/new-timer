@@ -2,11 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { loadSettings, saveSettings } from '../utils/storage';
 import { loadWorkouts, sortWorkouts } from '../utils/workoutStorage';
 import {
-  getBackgroundMusicState,
-  initBackgroundMusic,
-  subscribeBackgroundMusic,
   toggleBackgroundMusic,
 } from '../utils/audioManager';
+import { useBackgroundMusicState } from '../hooks/useBackgroundMusicState';
 import FireParticles from './FireParticles';
 import ElectricArc from './ElectricArc';
 import AmbientEcgPulse from './AmbientEcgPulse';
@@ -28,7 +26,7 @@ export default function HomeScreen({ onStartTimer, onManageWorkouts, onCreateWor
   const [workouts] = useState(() => sortWorkouts(loadWorkouts()));
   const [showAllWorkouts, setShowAllWorkouts] = useState(false);
   const [isGlitching, setIsGlitching] = useState(false);
-  const [bgmState, setBgmState] = useState(() => getBackgroundMusicState());
+  const bgmState = useBackgroundMusicState();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const glitchTimerRef = useRef(null);
 
@@ -46,13 +44,6 @@ export default function HomeScreen({ onStartTimer, onManageWorkouts, onCreateWor
     return () => {
       if (glitchTimerRef.current) clearTimeout(glitchTimerRef.current);
     };
-  }, []);
-
-  useEffect(() => {
-    initBackgroundMusic();
-    return subscribeBackgroundMusic((nextState) => {
-      setBgmState(nextState);
-    });
   }, []);
 
   // One-tap start: tap a workout card → go straight to timer
