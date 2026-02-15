@@ -29,20 +29,30 @@ export default function HomeScreen({ onStartTimer, onManageWorkouts, onCreateWor
   const bgmState = useBackgroundMusicState();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const glitchTimerRef = useRef(null);
+  const glitchResetTimerRef = useRef(null);
 
   // Glitch effect — trigger every 5-7 seconds for 300ms
   useEffect(() => {
+    let isCancelled = false;
+
     function scheduleGlitch() {
+      if (isCancelled) return;
       const delay = 5000 + Math.random() * 2000;
       glitchTimerRef.current = setTimeout(() => {
+        if (isCancelled) return;
         setIsGlitching(true);
-        setTimeout(() => setIsGlitching(false), 300);
+        glitchResetTimerRef.current = setTimeout(() => {
+          if (isCancelled) return;
+          setIsGlitching(false);
+        }, 300);
         scheduleGlitch();
       }, delay);
     }
     scheduleGlitch();
     return () => {
+      isCancelled = true;
       if (glitchTimerRef.current) clearTimeout(glitchTimerRef.current);
+      if (glitchResetTimerRef.current) clearTimeout(glitchResetTimerRef.current);
     };
   }, []);
 
