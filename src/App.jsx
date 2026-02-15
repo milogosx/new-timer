@@ -6,6 +6,7 @@ import WorkoutEditor from './components/WorkoutEditor';
 import WarmupEditor from './components/WarmupEditor';
 import CardioEditor from './components/CardioEditor';
 import { initBackgroundMusic, startBackgroundMusic } from './utils/audioManager';
+import { SCREENS, EDITOR_RETURN } from './constants/appState';
 import './App.css';
 
 function App() {
@@ -26,8 +27,7 @@ function App() {
     });
   }
 
-  // Screen: 'home' | 'timer' | 'library' | 'editor' | 'warmup-editor'
-  const [screen, setScreen] = useState('home');
+  const [screen, setScreen] = useState(SCREENS.HOME);
   const [timerConfig, setTimerConfig] = useState({
     sessionMinutes: 60,
     intervalSeconds: 30,
@@ -37,7 +37,7 @@ function App() {
   const [editingWarmup, setEditingWarmup] = useState(null);
   const [editingCardio, setEditingCardio] = useState(null);
   // Track where editor should return to ('home' or 'library')
-  const [editorReturnTo, setEditorReturnTo] = useState('library');
+  const [editorReturnTo, setEditorReturnTo] = useState(EDITOR_RETURN.LIBRARY);
 
   // Detect PWA standalone mode (iOS uses navigator.standalone, Android uses matchMedia)
   useEffect(() => {
@@ -76,35 +76,35 @@ function App() {
 
   function handleStartTimer(sessionMinutes, intervalSeconds, workout) {
     setTimerConfig({ sessionMinutes, intervalSeconds, workout });
-    setScreen('timer');
+    setScreen(SCREENS.TIMER);
   }
 
   function handleBackToHome() {
-    setScreen('home');
+    setScreen(SCREENS.HOME);
   }
 
   function handleManageWorkouts() {
-    setScreen('library');
+    setScreen(SCREENS.LIBRARY);
   }
 
   function handleEditWorkout(workout) {
     setEditingWorkout(workout);
-    setEditorReturnTo('library');
-    setScreen('editor');
+    setEditorReturnTo(EDITOR_RETURN.LIBRARY);
+    setScreen(SCREENS.EDITOR);
   }
 
   // From library
   function handleCreateWorkoutFromLibrary() {
     setEditingWorkout(null);
-    setEditorReturnTo('library');
-    setScreen('editor');
+    setEditorReturnTo(EDITOR_RETURN.LIBRARY);
+    setScreen(SCREENS.EDITOR);
   }
 
   // From home screen (+ CREATE NEW WORKOUT)
   function handleCreateWorkoutFromHome() {
     setEditingWorkout(null);
-    setEditorReturnTo('home');
-    setScreen('editor');
+    setEditorReturnTo(EDITOR_RETURN.HOME);
+    setScreen(SCREENS.EDITOR);
   }
 
   function handleEditorSave() {
@@ -117,47 +117,47 @@ function App() {
 
   function handleEditWarmup(warmup) {
     setEditingWarmup(warmup);
-    setScreen('warmup-editor');
+    setScreen(SCREENS.WARMUP_EDITOR);
   }
 
   function handleCreateWarmup() {
     setEditingWarmup(null);
-    setScreen('warmup-editor');
+    setScreen(SCREENS.WARMUP_EDITOR);
   }
 
   function handleWarmupEditorSave() {
-    setScreen('library');
+    setScreen(SCREENS.LIBRARY);
   }
 
   function handleWarmupEditorCancel() {
-    setScreen('library');
+    setScreen(SCREENS.LIBRARY);
   }
 
   function handleEditCardio(cardio) {
     setEditingCardio(cardio);
-    setScreen('cardio-editor');
+    setScreen(SCREENS.CARDIO_EDITOR);
   }
 
   function handleCreateCardio() {
     setEditingCardio(null);
-    setScreen('cardio-editor');
+    setScreen(SCREENS.CARDIO_EDITOR);
   }
 
   function handleCardioEditorSave() {
-    setScreen('library');
+    setScreen(SCREENS.LIBRARY);
   }
 
   function handleCardioEditorCancel() {
-    setScreen('library');
+    setScreen(SCREENS.LIBRARY);
   }
 
   function handleLibraryBack() {
-    setScreen('home');
+    setScreen(SCREENS.HOME);
   }
 
   return (
     <div className="app">
-      {screen === 'home' && (
+      {screen === SCREENS.HOME && (
         <HomeScreen
           onStartTimer={handleStartTimer}
           onManageWorkouts={handleManageWorkouts}
@@ -166,7 +166,7 @@ function App() {
           onToggleTheme={toggleTheme}
         />
       )}
-      {screen === 'timer' && (
+      {screen === SCREENS.TIMER && (
         <TimerScreen
           sessionMinutes={timerConfig.sessionMinutes}
           intervalSeconds={timerConfig.intervalSeconds}
@@ -174,7 +174,7 @@ function App() {
           onBack={handleBackToHome}
         />
       )}
-      {screen === 'library' && (
+      {screen === SCREENS.LIBRARY && (
         <WorkoutLibrary
           onBack={handleLibraryBack}
           onEdit={handleEditWorkout}
@@ -185,21 +185,21 @@ function App() {
           onEditCardio={handleEditCardio}
         />
       )}
-      {screen === 'editor' && (
+      {screen === SCREENS.EDITOR && (
         <WorkoutEditor
           workout={editingWorkout}
           onSave={handleEditorSave}
           onCancel={handleEditorCancel}
         />
       )}
-      {screen === 'warmup-editor' && (
+      {screen === SCREENS.WARMUP_EDITOR && (
         <WarmupEditor
           warmup={editingWarmup}
           onSave={handleWarmupEditorSave}
           onCancel={handleWarmupEditorCancel}
         />
       )}
-      {screen === 'cardio-editor' && (
+      {screen === SCREENS.CARDIO_EDITOR && (
         <CardioEditor
           cardio={editingCardio}
           onSave={handleCardioEditorSave}
