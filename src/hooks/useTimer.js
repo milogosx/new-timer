@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   deriveResumedIntervalState,
+  resolveResumedSessionStatus,
 } from '../utils/timerLogic';
 import { playBell, playCountdown, initAudio } from '../utils/audioManager';
 import { saveSessionState, clearSessionState } from '../utils/storage';
@@ -458,9 +459,15 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
     currentIntervalDurationRef.current = resumeState.currentIntervalDuration;
     isQuickAddRef.current = resumeState.isQuickAdd;
 
-    const nowMono = monotonicNow();
-    sessionRunStartMonoRef.current = nowMono;
-    intervalRunStartMonoRef.current = nowMono;
+    const resumedStatus = resolveResumedSessionStatus(savedState);
+    if (resumedStatus === 'running') {
+      const nowMono = monotonicNow();
+      sessionRunStartMonoRef.current = nowMono;
+      intervalRunStartMonoRef.current = nowMono;
+    } else {
+      sessionRunStartMonoRef.current = null;
+      intervalRunStartMonoRef.current = null;
+    }
 
     setElapsedSeconds(resumeState.elapsed);
     setIntervalRemaining(resumeState.intervalRemaining);
@@ -470,15 +477,22 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
     setIsQuickAdd(resumeState.isQuickAdd);
     setCompletedElapsedSeconds(0);
 
-    setStatus('running');
-    statusRef.current = 'running';
-
-    requestWakeLock();
-    startTicking();
-    persistSession('running');
+    if (resumedStatus === 'paused') {
+      setStatus('paused');
+      statusRef.current = 'paused';
+      stopTicking();
+      releaseWakeLock();
+      persistSession('paused');
+    } else {
+      setStatus('running');
+      statusRef.current = 'running';
+      requestWakeLock();
+      startTicking();
+      persistSession('running');
+    }
 
     return true;
-  }, [persistSession, startTicking]);
+  }, [persistSession, startTicking, stopTicking]);
 
   // Cleanup on unmount
   useEffect(() => {

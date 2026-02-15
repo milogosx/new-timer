@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { deriveResumedIntervalState, getNextCircleColor } from '../src/utils/timerLogic.js';
+import {
+  deriveResumedIntervalState,
+  getNextCircleColor,
+  resolveResumedSessionStatus,
+} from '../src/utils/timerLogic.js';
 
 test('deriveResumedIntervalState resumes normal interval progression', () => {
   const now = 1_000_000;
@@ -80,6 +84,17 @@ test('getNextCircleColor alternates between black and teal only', () => {
   assert.equal(getNextCircleColor('black', false), 'teal');
   assert.equal(getNextCircleColor('teal', false), 'black');
   assert.equal(getNextCircleColor('anything-else', false), 'teal');
+});
+
+test('resolveResumedSessionStatus preserves paused sessions', () => {
+  assert.equal(resolveResumedSessionStatus({ sessionStatus: 'paused' }), 'paused');
+});
+
+test('resolveResumedSessionStatus defaults to running for legacy or unknown status', () => {
+  assert.equal(resolveResumedSessionStatus({}), 'running');
+  assert.equal(resolveResumedSessionStatus({ sessionStatus: 'running' }), 'running');
+  assert.equal(resolveResumedSessionStatus({ sessionStatus: 'countdown' }), 'running');
+  assert.equal(resolveResumedSessionStatus(null), 'running');
 });
 
 test('deriveResumedIntervalState normalizes legacy second-based epoch timestamps', () => {

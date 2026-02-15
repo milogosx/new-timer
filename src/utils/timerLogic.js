@@ -50,6 +50,10 @@ export function getNextCircleColor(currentColor) {
   return currentColor === 'teal' ? 'black' : 'teal';
 }
 
+export function resolveResumedSessionStatus(savedState) {
+  return savedState?.sessionStatus === 'paused' ? 'paused' : 'running';
+}
+
 export function deriveResumedIntervalState(savedState, now = Date.now()) {
   const nowMs = normalizeEpochMs(now) || Date.now();
 
