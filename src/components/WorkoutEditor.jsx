@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createWorkout, updateWorkout, createExercise, loadWarmups, loadCardios } from '../utils/workoutStorage';
+import { sanitizeExercisesForSave } from '../utils/exerciseSanitizer';
 import './WorkoutEditor.css';
 
 const WORKOUT_TYPES = ['strength', 'cardio', 'mobility', 'hiit', 'other'];
@@ -59,22 +60,16 @@ export default function WorkoutEditor({ workout, onSave, onCancel }) {
       return;
     }
 
-    const validExercises = exercises.filter((e) => e.name.trim() !== '');
-    if (validExercises.length === 0) {
+    const cleanExercises = sanitizeExercisesForSave(exercises, {
+      sets: 3,
+      reps: '10',
+      rest: 60,
+      rpe: 'RPE 7',
+    });
+    if (cleanExercises.length === 0) {
       alert('Add at least one exercise');
       return;
     }
-
-    // Ensure all exercises have proper numeric values
-    const cleanExercises = validExercises.map((e) => ({
-      ...e,
-      name: e.name.trim(),
-      sets: Math.max(1, parseInt(e.sets) || 3),
-      reps: e.reps.trim() || '10',
-      rest: Math.max(0, parseInt(e.rest) || 60),
-      rpe: e.rpe.trim() || 'RPE 7',
-      note: (e.note || '').trim(),
-    }));
 
     if (isEditing) {
       updateWorkout(workout.id, {

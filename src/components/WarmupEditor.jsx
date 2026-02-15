@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createWarmup, updateWarmup, createExercise } from '../utils/workoutStorage';
+import { sanitizeExercisesForSave } from '../utils/exerciseSanitizer';
 import './WarmupEditor.css';
 
 export default function WarmupEditor({ warmup, onSave, onCancel }) {
@@ -40,21 +41,16 @@ export default function WarmupEditor({ warmup, onSave, onCancel }) {
       return;
     }
 
-    const validExercises = exercises.filter((e) => e.name.trim() !== '');
-    if (validExercises.length === 0) {
+    const cleanExercises = sanitizeExercisesForSave(exercises, {
+      sets: 2,
+      reps: '10',
+      rest: 15,
+      rpe: 'RPE 3',
+    });
+    if (cleanExercises.length === 0) {
       alert('Add at least one exercise');
       return;
     }
-
-    const cleanExercises = validExercises.map((e) => ({
-      ...e,
-      name: e.name.trim(),
-      sets: Math.max(1, parseInt(e.sets) || 2),
-      reps: e.reps.trim() || '10',
-      rest: Math.max(0, parseInt(e.rest) || 15),
-      rpe: e.rpe.trim() || 'RPE 3',
-      note: (e.note || '').trim(),
-    }));
 
     if (isEditing) {
       updateWarmup(warmup.id, {

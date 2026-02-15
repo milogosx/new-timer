@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createCardio, updateCardio, createExercise } from '../utils/workoutStorage';
+import { sanitizeExercisesForSave } from '../utils/exerciseSanitizer';
 import './CardioEditor.css';
 
 export default function CardioEditor({ cardio, onSave, onCancel }) {
@@ -40,21 +41,16 @@ export default function CardioEditor({ cardio, onSave, onCancel }) {
             return;
         }
 
-        const validExercises = exercises.filter((e) => e.name.trim() !== '');
-        if (validExercises.length === 0) {
+        const cleanExercises = sanitizeExercisesForSave(exercises, {
+            sets: 1,
+            reps: 'Cont.',
+            rest: 0,
+            rpe: 'RPE 5',
+        });
+        if (cleanExercises.length === 0) {
             alert('Add at least one exercise');
             return;
         }
-
-        const cleanExercises = validExercises.map((e) => ({
-            ...e,
-            name: e.name.trim(),
-            sets: Math.max(1, parseInt(e.sets) || 1),
-            reps: e.reps.trim() || 'Cont.',
-            rest: Math.max(0, parseInt(e.rest) || 0),
-            rpe: e.rpe.trim() || 'RPE 5',
-            note: (e.note || '').trim(),
-        }));
 
         if (isEditing) {
             updateCardio(cardio.id, {
