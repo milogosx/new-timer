@@ -23,10 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-# Local Netlify folder (keep portable config tracked)
-.netlify/*
-!.netlify/
-!.netlify/netlify.toml
+# Local Netlify folder
+.netlify
 
 # Local artifacts
 ScreenRecording.MP4
