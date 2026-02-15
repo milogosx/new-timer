@@ -13,6 +13,7 @@ const CLOUD_READ_ENDPOINT = '/.netlify/functions/profile-read';
 const CLOUD_WRITE_ENDPOINT = '/.netlify/functions/profile-write';
 const CLOUD_REQUEST_TIMEOUT_MS = 2500;
 const CLOUD_WRITE_DEBOUNCE_MS = 450;
+const CLOUD_RETRY_DELAY_MS = 2000;
 
 const SCHEMA_FIELD_BY_SECTION = {
   workouts: 'workoutsSchemaVersion',
@@ -48,6 +49,7 @@ let cloudAvailability = 'unknown';
 let pendingPatch = {};
 let flushTimerId = null;
 let flushInFlight = false;
+let lifecycleBound = false;
 
 function isBrowserRuntime() {
   return typeof window !== 'undefined'
@@ -258,44 +260,51 @@ async function flushPendingPatch() {
   flushInFlight = false;
 
   if (!ok) {
-    pendingPatch = {};
+    pendingPatch = mergePatches(patch, pendingPatch);
+    schedulePatchFlush(CLOUD_RETRY_DELAY_MS);
     return;
   }
 
   if (Object.keys(pendingPatch).length > 0) {
-    flushTimerId = setTimeout(() => {
-      flushTimerId = null;
-      void flushPendingPatch();
-    }, CLOUD_WRITE_DEBOUNCE_MS);
+    schedulePatchFlush(CLOUD_WRITE_DEBOUNCE_MS);
   }
 }
 
-function schedulePatchFlush() {
+function schedulePatchFlush(delayMs = CLOUD_WRITE_DEBOUNCE_MS) {
   if (flushTimerId !== null) return;
   flushTimerId = setTimeout(() => {
     flushTimerId = null;
     void flushPendingPatch();
-  }, CLOUD_WRITE_DEBOUNCE_MS);
+  }, delayMs);
+}
+
+function flushSoon() {
+  if (Object.keys(pendingPatch).length === 0) return;
+  if (flushTimerId !== null) return;
+  schedulePatchFlush(0);
 }
 
 function applyRemoteProfileToLocal(profile) {
   ['workouts', 'warmups', 'cardios'].forEach((section) => {
+    const deletedDefaultField = DELETED_DEFAULT_FIELD_BY_SECTION[section];
+    const localDeleted = new Set(readLocalDeletedDefaultIds(section));
+    const remoteDeleted = new Set(sanitizeStringArray(profile[deletedDefaultField]) || []);
+    const mergedDeleted = [...new Set([...localDeleted, ...remoteDeleted])];
+
+    safeSetItem(
+      DELETED_DEFAULT_STORAGE_KEY_BY_SECTION[section],
+      JSON.stringify(mergedDeleted)
+    );
+
     if (Array.isArray(profile[section])) {
-      safeSetItem(STORAGE_KEY_BY_SECTION[section], JSON.stringify(profile[section]));
+      const filtered = profile[section].filter((item) => !mergedDeleted.includes(item?.id));
+      safeSetItem(STORAGE_KEY_BY_SECTION[section], JSON.stringify(filtered));
     }
 
     const schemaField = SCHEMA_FIELD_BY_SECTION[section];
     const schemaVersion = toSafeInt(profile[schemaField], 0);
     if (schemaVersion > 0) {
       safeSetItem(SCHEMA_KEY_BY_SECTION[section], String(schemaVersion));
-    }
-
-    const deletedDefaultField = DELETED_DEFAULT_FIELD_BY_SECTION[section];
-    if (Array.isArray(profile[deletedDefaultField])) {
-      safeSetItem(
-        DELETED_DEFAULT_STORAGE_KEY_BY_SECTION[section],
-        JSON.stringify(sanitizeStringArray(profile[deletedDefaultField]) || [])
-      );
     }
   });
 
@@ -368,4 +377,26 @@ export function queueCloudProfileSync(sectionPatch = {}) {
 
   pendingPatch = mergePatches(pendingPatch, sanitizedPatch);
   schedulePatchFlush();
+}
+
+export function bindCloudSyncLifecycle() {
+  if (!isBrowserRuntime() || lifecycleBound) return;
+
+  lifecycleBound = true;
+
+  const handleOnline = () => {
+    flushSoon();
+  };
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'hidden') {
+      flushSoon();
+    }
+  };
+  const handlePageHide = () => {
+    flushSoon();
+  };
+
+  window.addEventListener('online', handleOnline);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('pagehide', handlePageHide);
 }

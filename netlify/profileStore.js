@@ -70,7 +70,6 @@ function normalizeProfileRecord(value) {
     || Array.isArray(profile.deletedDefaultCardioIds);
 
   if (!hasContent) return null;
-  if (!profile.updatedAt) profile.updatedAt = Date.now();
   return profile;
 }
 
@@ -111,18 +110,23 @@ export function initBlobsContext(event) {
 export function mergeProfilePatch(existingProfile, patch) {
   const base = normalizeProfileRecord(existingProfile) || {};
   const normalizedPatch = normalizeProfileRecord(patch) || {};
+  const existingUpdatedAt = toSafeInt(base.updatedAt, 0);
+  const incomingUpdatedAt = Math.max(
+    0,
+    toSafeInt(patch?.clientUpdatedAt, 0),
+    toSafeInt(normalizedPatch.updatedAt, 0)
+  );
+
+  if (incomingUpdatedAt > 0 && existingUpdatedAt > 0 && incomingUpdatedAt < existingUpdatedAt) {
+    return base;
+  }
 
   const merged = {
     ...base,
     ...normalizedPatch,
   };
 
-  const nextUpdatedAt = Math.max(
-    0,
-    toSafeInt(patch?.clientUpdatedAt, 0),
-    toSafeInt(normalizedPatch.updatedAt, 0),
-    Date.now()
-  );
+  const nextUpdatedAt = incomingUpdatedAt || existingUpdatedAt || Date.now();
   merged.updatedAt = nextUpdatedAt;
 
   return merged;

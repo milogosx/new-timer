@@ -6,7 +6,7 @@ import WorkoutEditor from './components/WorkoutEditor';
 import WarmupEditor from './components/WarmupEditor';
 import CardioEditor from './components/CardioEditor';
 import { initBackgroundMusic, startBackgroundMusic } from './utils/audioManager';
-import { bootstrapCloudProfile } from './utils/cloudProfileSync';
+import { bindCloudSyncLifecycle, bootstrapCloudProfile } from './utils/cloudProfileSync';
 import { SCREENS, EDITOR_RETURN } from './constants/appState';
 import './App.css';
 
@@ -78,6 +78,7 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
+    bindCloudSyncLifecycle();
 
     async function initializeCloudProfile() {
       const result = await bootstrapCloudProfile();
