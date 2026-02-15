@@ -1,44 +1,53 @@
 let wakeLock = null;
+let visibilityListenerBound = false;
 
 export async function requestWakeLock() {
   try {
-    if ('wakeLock' in navigator) {
-      wakeLock = await navigator.wakeLock.request('screen');
-
-      wakeLock.addEventListener('release', () => {
-        console.log('Wake Lock released');
-      });
-
-      // Re-acquire on visibility change
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-
-      return true;
-    } else {
+    if (typeof navigator === 'undefined' || !('wakeLock' in navigator)) {
       console.warn('Wake Lock API not supported');
       return false;
     }
+
+    if (wakeLock && !wakeLock.released) {
+      return true;
+    }
+
+    wakeLock = await navigator.wakeLock.request('screen');
+
+    wakeLock.addEventListener('release', handleWakeLockRelease);
+
+    // Re-acquire on visibility change.
+    if (!visibilityListenerBound) {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      visibilityListenerBound = true;
+    }
+
+    return true;
   } catch (err) {
     console.error('Wake Lock failed:', err);
     return false;
   }
 }
 
+function handleWakeLockRelease() {
+  wakeLock = null;
+}
+
 async function handleVisibilityChange() {
-  if (document.visibilityState === 'visible' && wakeLock !== null) {
-    try {
-      wakeLock = await navigator.wakeLock.request('screen');
-    } catch (err) {
-      console.error('Wake Lock re-acquire failed:', err);
-    }
+  if (document.visibilityState === 'visible') {
+    await requestWakeLock();
   }
 }
 
 export function releaseWakeLock() {
   if (wakeLock !== null) {
-    wakeLock.release();
+    void wakeLock.release();
     wakeLock = null;
   }
-  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  if (visibilityListenerBound) {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    visibilityListenerBound = false;
+  }
 }
 
 export function isWakeLockActive() {
@@ -46,5 +55,5 @@ export function isWakeLockActive() {
 }
 
 export function isWakeLockSupported() {
-  return 'wakeLock' in navigator;
+  return typeof navigator !== 'undefined' && 'wakeLock' in navigator;
 }

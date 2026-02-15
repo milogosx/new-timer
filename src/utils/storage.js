@@ -1,7 +1,7 @@
 const ACTIVE_SESSION_KEY = 'eliteTimer_activeSession';
 const SETTINGS_KEY = 'eliteTimer_settings';
 const AUDIO_PREFS_KEY = 'eliteTimer_audioPrefs';
-const DEFAULT_AUDIO_PREFS = { bgmEnabled: true };
+const DEFAULT_AUDIO_PREFS = { bgmEnabled: false };
 
 export function saveSessionState(state) {
   try {

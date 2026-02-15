@@ -49,6 +49,10 @@ First 30-60 minutes:
    - `npm run build`
    - `npm run test:e2e`
 
+Reusable process guide:
+
+- `/Users/camiloperezsetright/Projects/new-timer/docs/project-recovery-playbook.md`
+
 ## Architecture Snapshot
 
 Entry points:
@@ -92,6 +96,7 @@ Session/settings/audio:
 - `eliteTimer_activeSession`
 - `eliteTimer_settings`
 - `eliteTimer_audioPrefs`
+  - `bgmEnabled` defaults to `false` unless user opts in
 
 Workout data:
 
@@ -154,7 +159,7 @@ Behavior:
 Verified on **February 15, 2026**:
 
 - `npm run lint`: passing
-- `npm test`: passing (28/28)
+- `npm test`: passing (31/31)
 - `npm run build`: passing
 - `npm run test:e2e`: passing
 
