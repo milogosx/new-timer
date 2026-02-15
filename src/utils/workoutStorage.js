@@ -230,6 +230,10 @@ function readSchemaVersion(key) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function shouldWriteBack(needsMigration, normalizedJson, migratedJson) {
+  return needsMigration || normalizedJson !== migratedJson;
+}
+
 export function loadWorkouts() {
   const storedWorkouts = safeParseArray(safeGetItem(WORKOUTS_KEY));
   const storedVersion = readSchemaVersion(WORKOUTS_SCHEMA_KEY);
@@ -249,10 +253,8 @@ export function loadWorkouts() {
   const normalizedJson = JSON.stringify(normalized);
   const migratedJson = JSON.stringify(migrated);
 
-  if (needsMigration || normalizedJson !== migratedJson) {
+  if (shouldWriteBack(needsMigration, normalizedJson, migratedJson)) {
     saveWorkouts(migrated);
-  } else if (storedVersion !== WORKOUTS_SCHEMA_VERSION) {
-    safeSetItem(WORKOUTS_SCHEMA_KEY, String(WORKOUTS_SCHEMA_VERSION));
   }
 
   return migrated;
@@ -429,10 +431,8 @@ export function loadWarmups() {
   const normalizedJson = JSON.stringify(normalized);
   const migratedJson = JSON.stringify(migrated);
 
-  if (needsMigration || normalizedJson !== migratedJson) {
+  if (shouldWriteBack(needsMigration, normalizedJson, migratedJson)) {
     saveWarmups(migrated);
-  } else if (storedVersion !== WARMUPS_SCHEMA_VERSION) {
-    safeSetItem(WARMUPS_SCHEMA_KEY, String(WARMUPS_SCHEMA_VERSION));
   }
 
   return migrated;
@@ -595,10 +595,8 @@ export function loadCardios() {
   const normalizedJson = JSON.stringify(normalized);
   const migratedJson = JSON.stringify(migrated);
 
-  if (needsMigration || normalizedJson !== migratedJson) {
+  if (shouldWriteBack(needsMigration, normalizedJson, migratedJson)) {
     saveCardios(migrated);
-  } else if (storedVersion !== CARDIOS_SCHEMA_VERSION) {
-    safeSetItem(CARDIOS_SCHEMA_KEY, String(CARDIOS_SCHEMA_VERSION));
   }
 
   return migrated;
