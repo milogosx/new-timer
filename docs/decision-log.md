@@ -49,3 +49,12 @@ Last updated: February 15, 2026
 - Alternatives considered: environment-local config only.
 - Consequence: Reproducible deploy behavior; requires avoiding local state leakage in commits.
 - Status: implemented
+
+### D-005
+
+- Date: 2026-02-15
+- Decision: Workout defaults persist via Netlify Blobs profile sync (Functions-backed), with local cache fallback.
+- Context: Sole-user editing across devices requires durable defaults without hardcoding and without relying only on browser-local storage.
+- Alternatives considered: localStorage only; external hosted database.
+- Consequence: Cross-device durability improves immediately; introduces serverless dependency and endpoint-hardening risk.
+- Status: implemented

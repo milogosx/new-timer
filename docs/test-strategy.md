@@ -7,6 +7,7 @@ Last updated: February 15, 2026
 - Unit tests (primary):
   - timer derivation and formatting (`src/utils/timerLogic.js`)
   - storage/migration contracts (`src/utils/workoutStorage.js`)
+  - cloud-sync fallback safety (`src/utils/cloudProfileSync.js`) (planned)
   - deterministic waveform geometry (`src/utils/ecgWaveform.js`)
   - session cadence and resume policy contracts (`src/utils/sessionPersistenceCadence.js`, `src/utils/sessionResumePolicy.js`)
 - Integration-focused unit tests (targeted additions):
@@ -18,6 +19,7 @@ Last updated: February 15, 2026
   - wake lock indicators
   - audio unlock behavior
   - theme persistence and splash behavior
+  - cloud profile hydrate/write behavior (Netlify deploy)
 
 ## Browser/Device Support Matrix
 
@@ -46,6 +48,10 @@ Last updated: February 15, 2026
   - paused session reload restores paused state
   - running session reload restores running state
   - mismatched session config shows safe discard path
+- Cloud sync checks:
+  - edit workout name on device A, reload on device B, verify update appears as default
+  - edit warm-up/cardio exercises on mobile, reload app, verify persistence
+  - temporarily block network, save local edit, restore network, verify next online boot preserves latest profile winner by timestamp
 
 ## Critical Behavior Matrix
 
@@ -56,6 +62,7 @@ Last updated: February 15, 2026
 | Interval logic | interval count/color progression; quick add rest handling |
 | Data migration | legacy content migration and schema version updates |
 | Content CRUD | workout/warm-up/cardio create, edit, delete, reference cleanup |
+| Cloud profile sync | boot hydrate, local-write then cloud-sync, fail-safe local fallback |
 | Theme | toggle persistence + correct `data-theme` and `theme-color` behavior |
 
 ## Data/Migration Test Rules
@@ -76,12 +83,14 @@ Last updated: February 15, 2026
 
 - Any change to timer progression/resume logic.
 - Any schema version bump or normalization change.
+- Any change to cloud profile payload/merge rules.
 - Any change to session persistence payload shape.
 - Any bug fix touching production behavior (add regression test first where feasible).
 
 ## Known Gaps
 
 - E2E currently covers one primary happy-path flow (Chromium only).
+- Cloud profile sync behavior is currently validated manually (no function-mocked integration test yet).
 - No automated performance regression checks for persistence cadence.
 - Wake lock/audio behavior still depends on manual cross-device verification.
 - Hook-level timer lifecycle transitions still rely mostly on unit contracts and manual smoke (no dedicated hook test harness yet).

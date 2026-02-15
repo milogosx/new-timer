@@ -4,10 +4,10 @@ Last updated: February 15, 2026
 
 ## System Boundaries
 
-- Client-only React application (no backend).
-- Primary persistence is browser `localStorage`.
+- Client-first React application with Netlify serverless profile sync.
+- Workout profile persistence is Netlify Blobs (via Functions) with local cache fallback.
 - Browser APIs used: Web Audio, Wake Lock, vibration, visibility events.
-- Build/deploy: Vite build output (`dist`) and Netlify publish.
+- Build/deploy: Vite build output (`dist`) + Netlify publish + Netlify Functions.
 
 ## Runtime Topology
 
@@ -23,11 +23,14 @@ flowchart TD
   D --> N["exerciseProgress helpers"]
   D --> M
   G --> H["timerLogic + timerTickMath + sessionSnapshot + storage + wakeLock + audioManager"]
-  C --> I["storage + workoutStorage + audioManager"]
-  E --> J["workoutStorage"]
+  C --> I["storage + workoutStorage + cloudProfileSync + audioManager"]
+  E --> J["workoutStorage + cloudProfileSync"]
   F --> O["exerciseSanitizer helpers"]
   F --> J
-  J --> K["localStorage (workouts/warmups/cardios + schema keys)"]
+  J --> K["localStorage cache (workouts/warmups/cardios + schema keys)"]
+  P["profile-read/profile-write Functions"] --> Q["Netlify Blobs profile store"]
+  I --> P
+  J --> P
   H --> L["localStorage (active session/settings/audio prefs)"]
 ```
 
@@ -35,6 +38,7 @@ flowchart TD
 
 - Session start:
   - Home screen reads settings/workout templates from storage.
+  - `cloudProfileSync` hydrates workout profile from Netlify (if reachable) before first screen render.
   - App passes selected session config to Timer screen.
   - Timer screen initializes exercise progress and timer hook.
 - Active session:
@@ -45,7 +49,8 @@ flowchart TD
   - `useTimer.resumeSession` reconstructs state using saved payload and derivation logic.
 - Content management:
   - Library/editors perform CRUD via `workoutStorage`.
-  - Migration/upsert logic runs during load and updates schema version keys.
+  - Migration/upsert logic runs during load and updates schema version keys in local cache.
+  - Save operations queue debounced profile writes to Netlify Functions (write-through sync).
 
 ## State Ownership
 
@@ -53,6 +58,8 @@ flowchart TD
 - Timer runtime state machine: `src/hooks/useTimer.js`.
 - Exercise checklist state for current view: `src/components/TimerScreen.jsx`.
 - Workouts/warmups/cardios and schemas: `src/utils/workoutStorage.js`.
+- Cloud profile hydration/write queue: `src/utils/cloudProfileSync.js`.
+- Netlify profile endpoints: `netlify/functions/profile-read.js`, `netlify/functions/profile-write.js`.
 - Session/settings/audio prefs: `src/utils/storage.js`.
 - Screen flow constants: `src/constants/appState.js`.
 

@@ -1,3 +1,5 @@
+import { queueCloudProfileSync } from './cloudProfileSync.js';
+
 const WORKOUTS_KEY = 'eliteTimer_workouts';
 const WARMUPS_KEY = 'eliteTimer_warmups';
 const CARDIOS_KEY = 'eliteTimer_cardios';
@@ -263,6 +265,10 @@ export function loadWorkouts() {
 export function saveWorkouts(workouts) {
   safeSetItem(WORKOUTS_KEY, JSON.stringify(workouts));
   safeSetItem(WORKOUTS_SCHEMA_KEY, String(WORKOUTS_SCHEMA_VERSION));
+  queueCloudProfileSync({
+    workouts,
+    workoutsSchemaVersion: WORKOUTS_SCHEMA_VERSION,
+  });
 }
 
 export function createWorkout(workout) {
@@ -441,6 +447,10 @@ export function loadWarmups() {
 export function saveWarmups(warmups) {
   safeSetItem(WARMUPS_KEY, JSON.stringify(warmups));
   safeSetItem(WARMUPS_SCHEMA_KEY, String(WARMUPS_SCHEMA_VERSION));
+  queueCloudProfileSync({
+    warmups,
+    warmupsSchemaVersion: WARMUPS_SCHEMA_VERSION,
+  });
 }
 
 export function createWarmup(warmup) {
@@ -605,6 +615,10 @@ export function loadCardios() {
 export function saveCardios(cardios) {
   safeSetItem(CARDIOS_KEY, JSON.stringify(cardios));
   safeSetItem(CARDIOS_SCHEMA_KEY, String(CARDIOS_SCHEMA_VERSION));
+  queueCloudProfileSync({
+    cardios,
+    cardiosSchemaVersion: CARDIOS_SCHEMA_VERSION,
+  });
 }
 
 export function createCardio(cardio) {

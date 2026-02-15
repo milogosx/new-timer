@@ -20,6 +20,9 @@ Last updated: February 15, 2026
 - Session duration is persisted in seconds and must match timer configuration for timing resume.
 - Exercise progress persistence is best-effort and tied to active sessions.
 - Storage read/write failures must fail safely without crashing app startup.
+- Workout profile boot hydration must complete (or fail safe) before first interactive screen render.
+- Workout profile writes must update local cache first, then queue debounced cloud sync writes.
+- Cloud profile timestamps (`eliteTimer_profile_updated_at` vs remote `updatedAt`) determine local-vs-remote winner on boot.
 
 ## Workout Data Invariants
 

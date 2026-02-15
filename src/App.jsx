@@ -6,6 +6,7 @@ import WorkoutEditor from './components/WorkoutEditor';
 import WarmupEditor from './components/WarmupEditor';
 import CardioEditor from './components/CardioEditor';
 import { initBackgroundMusic, startBackgroundMusic } from './utils/audioManager';
+import { bootstrapCloudProfile } from './utils/cloudProfileSync';
 import { SCREENS, EDITOR_RETURN } from './constants/appState';
 import './App.css';
 
@@ -38,6 +39,7 @@ function App() {
   const [editingCardio, setEditingCardio] = useState(null);
   // Track where editor should return to ('home' or 'library')
   const [editorReturnTo, setEditorReturnTo] = useState(EDITOR_RETURN.LIBRARY);
+  const [isStorageReady, setIsStorageReady] = useState(false);
 
   // Detect PWA standalone mode (iOS uses navigator.standalone, Android uses matchMedia)
   useEffect(() => {
@@ -73,6 +75,30 @@ function App() {
 
     return removeListeners;
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function initializeCloudProfile() {
+      await bootstrapCloudProfile();
+      if (!cancelled) {
+        setIsStorageReady(true);
+      }
+    }
+
+    void initializeCloudProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!isStorageReady) {
+    return (
+      <div className="app">
+        <div className="app-loading">Syncing workouts...</div>
+      </div>
+    );
+  }
 
   function handleStartTimer(sessionMinutes, intervalSeconds, workout) {
     setTimerConfig({ sessionMinutes, intervalSeconds, workout });

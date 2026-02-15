@@ -12,12 +12,14 @@ Last updated: February 15, 2026
 | R4 | Migration semantics ambiguity for canonical workouts | Data expectation mismatch | Medium | Tests previously disagreed with behavior | Document policy and lock tests to policy | Open |
 | R5 | Netlify local state drift in `.netlify/` | Environment-specific config noise | Medium | Tooling can write local state artifacts | Keep portable config only; review before commit | Open |
 | R6 | Docs and tests drifting from implementation | Slower onboarding, unsafe change confidence | Medium | Baseline drift occurred before this pass | Treat docs as living; update during behavior changes | Open |
+| R7 | Unauthenticated cloud profile endpoints | Unauthorized profile overwrite risk | Medium | Endpoints are same-origin and profile-id scoped, but no user auth gate yet | Add auth gate (Netlify Identity/JWT or signed token workflow) before multi-user/public expansion | Open |
 
 ## Monitoring Signals
 
 - CI/local gate failures (`lint`, `test`).
 - User reports of timer drift, resume mismatch, or sleep/audio interruptions.
 - Unexpected schema migrations or missing defaults after app updates.
+- Unexpected cloud profile resets or edits from untrusted clients.
 
 ## Mitigations
 
