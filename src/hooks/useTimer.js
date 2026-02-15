@@ -1,12 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
-  getNextCircleColor,
   deriveResumedIntervalState,
 } from '../utils/timerLogic';
 import { playBell, playCountdown, initAudio } from '../utils/audioManager';
 import { saveSessionState, clearSessionState } from '../utils/storage';
 import { requestWakeLock, releaseWakeLock } from '../utils/wakeLock';
 import { buildSessionSnapshot } from '../utils/sessionSnapshot';
+import { advanceIntervalState } from '../utils/timerTickMath';
 
 const TICK_MS = 250; // Update 4x/sec for smooth display
 
@@ -170,31 +170,25 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
 
       if (intervalElapsedMs >= activeDurationMs) {
         playBell();
+        const nextState = advanceIntervalState({
+          intervalElapsedMs,
+          activeDurationMs,
+          intervalCount: intervalCountRef.current,
+          circleColor: circleColorRef.current,
+          currentIntervalDurationSec: currentIntervalDurationRef.current,
+          defaultIntervalSec: defaultIntervalSecRef.current,
+        });
 
-        let completions = 0;
-        const maxCompletionsPerTick = 2048;
-        let nextColor = circleColorRef.current;
-        let nextIntervalCount = intervalCountRef.current;
-        let nextDurationSec = currentIntervalDurationRef.current;
-
-        // Fast-forward through missed intervals (e.g. backgrounded for long time)
-        while (intervalElapsedMs >= activeDurationMs && completions < maxCompletionsPerTick) {
-          intervalElapsedMs -= activeDurationMs;
-          completions += 1;
-          nextIntervalCount += 1;
-          nextColor = getNextCircleColor(nextColor, false);
-          nextDurationSec = defaultIntervalSecRef.current;
-          activeDurationMs = Math.max(1, nextDurationSec * 1000);
-        }
-
-        intervalCountRef.current = nextIntervalCount;
-        circleColorRef.current = nextColor;
-        currentIntervalDurationRef.current = nextDurationSec;
+        intervalElapsedMs = nextState.intervalElapsedMs;
+        activeDurationMs = nextState.activeDurationMs;
+        intervalCountRef.current = nextState.intervalCount;
+        circleColorRef.current = nextState.circleColor;
+        currentIntervalDurationRef.current = nextState.currentIntervalDurationSec;
         isQuickAddRef.current = false;
 
-        setIntervalCount(nextIntervalCount);
-        setCircleColor(nextColor);
-        setCurrentIntervalDuration(nextDurationSec);
+        setIntervalCount(nextState.intervalCount);
+        setCircleColor(nextState.circleColor);
+        setCurrentIntervalDuration(nextState.currentIntervalDurationSec);
         setIsQuickAdd(false);
 
         // Reset the monotonic baseline for the new interval
