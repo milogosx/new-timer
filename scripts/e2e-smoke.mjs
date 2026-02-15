@@ -1,26 +1,65 @@
-import { spawn } from 'node:child_process';
-import { mkdir } from 'node:fs/promises';
+import http from 'node:http';
+import { mkdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { chromium } from 'playwright';
 
-const BASE_URL = process.env.E2E_BASE_URL || 'http://127.0.0.1:4173';
-const START_TIMEOUT_MS = 30_000;
+const HOST = '127.0.0.1';
+const PORT = 4173;
+const BASE_URL = process.env.E2E_BASE_URL || `http://${HOST}:${PORT}`;
+const DIST_DIR = path.resolve('dist');
+const MIME_TYPES = {
+  '.css': 'text/css; charset=utf-8',
+  '.html': 'text/html; charset=utf-8',
+  '.ico': 'image/x-icon',
+  '.js': 'text/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
+};
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function resolveContentType(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  return MIME_TYPES[ext] || 'application/octet-stream';
 }
 
-async function waitForServer(url, timeoutMs) {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < timeoutMs) {
+async function startStaticServer() {
+  const server = http.createServer(async (req, res) => {
     try {
-      const res = await fetch(url);
-      if (res.ok) return true;
-    } catch {
-      // retry
+      const rawPath = decodeURIComponent((req.url || '/').split('?')[0]);
+      const relativePath = rawPath === '/' ? 'index.html' : rawPath.replace(/^\//, '');
+      let filePath = path.resolve(DIST_DIR, relativePath);
+
+      if (!filePath.startsWith(DIST_DIR)) {
+        res.writeHead(403).end('Forbidden');
+        return;
+      }
+
+      let body;
+      try {
+        body = await readFile(filePath);
+      } catch {
+        filePath = path.resolve(DIST_DIR, 'index.html');
+        body = await readFile(filePath);
+      }
+
+      res.writeHead(200, {
+        'Content-Type': resolveContentType(filePath),
+        'Cache-Control': 'no-cache',
+      });
+      res.end(body);
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end(`Server error: ${err instanceof Error ? err.message : 'unknown'}`);
     }
-    await sleep(300);
-  }
-  throw new Error(`Timed out waiting for server at ${url}`);
+  });
+
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(PORT, HOST, resolve);
+  });
+
+  return server;
 }
 
 async function runSmokeFlow() {
@@ -76,45 +115,14 @@ async function runSmokeFlow() {
   }
 }
 
-async function stopServer(server) {
-  if (!server || server.killed) return;
-
-  const closePromise = new Promise((resolve) => {
-    server.once('close', resolve);
-    server.once('exit', resolve);
-  });
-
-  server.kill('SIGTERM');
-  const didCloseGracefully = await Promise.race([
-    closePromise.then(() => true),
-    sleep(3000).then(() => false),
-  ]);
-
-  if (!didCloseGracefully) {
-    server.kill('SIGKILL');
-    await Promise.race([
-      closePromise,
-      sleep(3000),
-    ]);
-  }
-}
-
 async function main() {
-  const server = spawn(
-    'npm',
-    ['run', 'preview', '--', '--host', '127.0.0.1', '--port', '4173', '--strictPort'],
-    { stdio: 'pipe' }
-  );
-
-  server.stdout.on('data', () => {});
-  server.stderr.on('data', () => {});
+  const server = await startStaticServer();
 
   try {
-    await waitForServer(BASE_URL, START_TIMEOUT_MS);
     await runSmokeFlow();
     console.log('E2E smoke flow passed.');
   } finally {
-    await stopServer(server);
+    await new Promise((resolve) => server.close(resolve));
   }
 }
 
