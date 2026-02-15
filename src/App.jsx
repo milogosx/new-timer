@@ -33,6 +33,7 @@ function App() {
     sessionMinutes: 60,
     intervalSeconds: 30,
     workout: null,
+    batterySaverMode: false,
   });
   const [editingWorkout, setEditingWorkout] = useState(null);
   const [editingWarmup, setEditingWarmup] = useState(null);
@@ -93,8 +94,13 @@ function App() {
     };
   }, []);
 
-  function handleStartTimer(sessionMinutes, intervalSeconds, workout) {
-    setTimerConfig({ sessionMinutes, intervalSeconds, workout });
+  function handleStartTimer(sessionMinutes, intervalSeconds, workout, options = {}) {
+    setTimerConfig({
+      sessionMinutes,
+      intervalSeconds,
+      workout,
+      batterySaverMode: Boolean(options.batterySaverMode),
+    });
     setScreen(SCREENS.TIMER);
   }
 
@@ -191,6 +197,7 @@ function App() {
           sessionMinutes={timerConfig.sessionMinutes}
           intervalSeconds={timerConfig.intervalSeconds}
           workout={timerConfig.workout}
+          batterySaverMode={timerConfig.batterySaverMode}
           onBack={handleBackToHome}
         />
       )}

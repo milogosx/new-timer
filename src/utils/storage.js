@@ -2,6 +2,40 @@ const ACTIVE_SESSION_KEY = 'eliteTimer_activeSession';
 const SETTINGS_KEY = 'eliteTimer_settings';
 const AUDIO_PREFS_KEY = 'eliteTimer_audioPrefs';
 const DEFAULT_AUDIO_PREFS = { bgmEnabled: false };
+const DEFAULT_SETTINGS = { sessionMinutes: 60, intervalSeconds: 30, batterySaverMode: false };
+
+function detectBatterySaverDefault() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return DEFAULT_SETTINGS.batterySaverMode;
+  }
+
+  return window.matchMedia('(pointer: coarse)').matches
+    || window.matchMedia('(max-width: 768px)').matches;
+}
+
+function normalizePositiveNumber(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+  return parsed;
+}
+
+function normalizeSettings(settings) {
+  const defaults = {
+    ...DEFAULT_SETTINGS,
+    batterySaverMode: detectBatterySaverDefault(),
+  };
+  const source = settings && typeof settings === 'object' ? settings : {};
+
+  return {
+    sessionMinutes: normalizePositiveNumber(source.sessionMinutes, defaults.sessionMinutes),
+    intervalSeconds: normalizePositiveNumber(source.intervalSeconds, defaults.intervalSeconds),
+    batterySaverMode: typeof source.batterySaverMode === 'boolean'
+      ? source.batterySaverMode
+      : defaults.batterySaverMode,
+  };
+}
 
 export function saveSessionState(state) {
   try {
@@ -31,7 +65,7 @@ export function clearSessionState() {
 
 export function saveSettings(settings) {
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(normalizeSettings(settings)));
   } catch (err) {
     console.error('Failed to save settings:', err);
   }
@@ -40,9 +74,10 @@ export function saveSettings(settings) {
 export function loadSettings() {
   try {
     const data = localStorage.getItem(SETTINGS_KEY);
-    return data ? JSON.parse(data) : { sessionMinutes: 60, intervalSeconds: 30 };
+    if (!data) return normalizeSettings(null);
+    return normalizeSettings(JSON.parse(data));
   } catch {
-    return { sessionMinutes: 60, intervalSeconds: 30 };
+    return normalizeSettings(null);
   }
 }
 

@@ -9,6 +9,7 @@ It is client-first, with Netlify-backed profile sync for workouts/warm-ups/cardi
 - Attach reusable warm-up and cardio routines to workouts.
 - Track per-exercise/per-set completion during a session.
 - Resume interrupted active sessions from local state.
+- Enable Battery Saver mode to reduce timer-screen animation/render cost during active sessions.
 - Persist workout-library edits as your default profile across devices via Netlify Functions + Blobs.
 
 ## Local Setup
@@ -64,6 +65,7 @@ Primary layers:
 
 - `src/components/*`: screen and UI components.
 - `src/hooks/useTimer.js`: core timer state machine (countdown/running/paused/resume).
+  - supports configurable tick cadence (RAF default, coarse interval in battery-saver mode)
 - `src/hooks/useBackgroundMusicState.js`: shared BGM state subscription for Home/Timer screens.
 - `src/utils/storage.js`: session/settings/audio preference persistence.
 - `src/utils/workoutStorage.js`: workouts/warm-ups/cardio CRUD + schema migration.
@@ -95,6 +97,9 @@ Session/settings/audio:
 
 - `eliteTimer_activeSession`
 - `eliteTimer_settings`
+  - `sessionMinutes`
+  - `intervalSeconds`
+  - `batterySaverMode` (defaults to `true` on coarse-pointer/mobile-like devices when unset)
 - `eliteTimer_audioPrefs`
   - `bgmEnabled` defaults to `false` unless user opts in
 
@@ -159,7 +164,7 @@ Behavior:
 Verified on **February 15, 2026**:
 
 - `npm run lint`: passing
-- `npm test`: passing (31/31)
+- `npm test`: passing (35/35)
 - `npm run build`: passing
 - `npm run test:e2e`: passing
 

@@ -29,7 +29,13 @@ function haptic(style = 'light') {
   }
 }
 
-export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, onBack }) {
+export default function TimerScreen({
+  sessionMinutes,
+  intervalSeconds,
+  workout,
+  batterySaverMode = false,
+  onBack,
+}) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const bgmState = useBackgroundMusicState();
@@ -57,9 +63,15 @@ export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, 
     workoutName: workout?.name || null,
     exerciseProgress,
   }), [workout?.id, workout?.name, exerciseProgress]);
-  const timer = useTimer(sessionMinutes, intervalSeconds, sessionMetadata);
+  const timer = useTimer(
+    sessionMinutes,
+    intervalSeconds,
+    sessionMetadata,
+    batterySaverMode ? 250 : 0
+  );
 
   const isActive = timer.status === 'running' || timer.status === 'paused' || timer.status === 'countdown';
+  const reduceEffects = batterySaverMode && isActive;
   const canResumeTiming = Boolean(savedSession?.timingMatches);
   const workoutMatchesSavedSession = doesWorkoutMatchSavedSession(savedSession, workout);
   const isSessionComplete = timer.completedElapsedSeconds > 0;
@@ -184,7 +196,7 @@ export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, 
   const completedExercises = exerciseProgress.filter((p) => p.completed).length;
 
   return (
-    <div className="timer-screen">
+    <div className={`timer-screen ${reduceEffects ? 'battery-saver-active' : ''}`}>
       {/* Header — compact nav row */}
       <header className="timer-header">
         <div className="timer-header-row">
@@ -223,6 +235,7 @@ export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, 
         progress={timer.intervalProgress}
         countdownNumber={timer.countdownNumber}
         timerMode={timer.circleColor === 'rest' ? 'rest' : timer.status === 'idle' ? 'idle' : 'running'}
+        suppressAmbientEffects={reduceEffects}
       />
 
       {/* Interval & Elapsed Info — spread apart */}

@@ -13,6 +13,7 @@ Last updated: February 15, 2026
 - Interval count starts at `1` on session start and only increments on interval completion.
 - Quick add creates a temporary rest interval (`circleColor = rest`) and then returns to default interval cadence.
 - Resume must not continue sessions that have already exceeded configured session duration.
+- Battery saver mode may reduce visual effects and tick cadence, but timer elapsed/remaining values must still derive from monotonic runtime timing.
 
 ## Persistence Invariants
 
@@ -41,6 +42,7 @@ Last updated: February 15, 2026
 - Theme source of truth is `<html data-theme="dark|light">` plus `er-timer-theme`.
 - Theme switch must update browser `meta[name="theme-color"]`.
 - Home, Timer, Library, and Editors must remain operable in both themes.
+- Timer UI must remain fully operable when battery saver mode is enabled.
 
 ## How To Validate
 

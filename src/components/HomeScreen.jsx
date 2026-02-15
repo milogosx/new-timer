@@ -23,6 +23,7 @@ const MAX_VISIBLE_WORKOUTS = 4;
 export default function HomeScreen({ onStartTimer, onManageWorkouts, onCreateWorkout, theme, onToggleTheme }) {
   const [sessionMinutes, setSessionMinutes] = useState(() => String(loadSettings().sessionMinutes));
   const [intervalSeconds, setIntervalSeconds] = useState(() => String(loadSettings().intervalSeconds));
+  const [batterySaverMode, setBatterySaverMode] = useState(() => Boolean(loadSettings().batterySaverMode));
   const [workouts] = useState(() => sortWorkouts(loadWorkouts()));
   const [showAllWorkouts, setShowAllWorkouts] = useState(false);
   const [isGlitching, setIsGlitching] = useState(false);
@@ -56,20 +57,46 @@ export default function HomeScreen({ onStartTimer, onManageWorkouts, onCreateWor
     };
   }, []);
 
-  // One-tap start: tap a workout card → go straight to timer
-  function handleWorkoutTap(workout) {
+  function getSanitizedSessionSettings(nextBatterySaverMode = batterySaverMode) {
     const mins = Math.max(1, Math.min(180, parseInt(sessionMinutes) || 60));
     const secs = Math.max(5, Math.min(600, parseInt(intervalSeconds) || 30));
-    saveSettings({ sessionMinutes: mins, intervalSeconds: secs });
-    onStartTimer(mins, secs, workout);
+    return {
+      sessionMinutes: mins,
+      intervalSeconds: secs,
+      batterySaverMode: nextBatterySaverMode,
+    };
+  }
+
+  // One-tap start: tap a workout card → go straight to timer
+  function handleWorkoutTap(workout) {
+    const nextSettings = getSanitizedSessionSettings();
+    saveSettings(nextSettings);
+    onStartTimer(
+      nextSettings.sessionMinutes,
+      nextSettings.intervalSeconds,
+      workout,
+      { batterySaverMode: nextSettings.batterySaverMode }
+    );
   }
 
   // Timer Only mode
   function handleTimerOnly() {
-    const mins = Math.max(1, Math.min(180, parseInt(sessionMinutes) || 60));
-    const secs = Math.max(5, Math.min(600, parseInt(intervalSeconds) || 30));
-    saveSettings({ sessionMinutes: mins, intervalSeconds: secs });
-    onStartTimer(mins, secs, null);
+    const nextSettings = getSanitizedSessionSettings();
+    saveSettings(nextSettings);
+    onStartTimer(
+      nextSettings.sessionMinutes,
+      nextSettings.intervalSeconds,
+      null,
+      { batterySaverMode: nextSettings.batterySaverMode }
+    );
+  }
+
+  function handleToggleBatterySaver() {
+    setBatterySaverMode((previous) => {
+      const next = !previous;
+      saveSettings(getSanitizedSessionSettings(next));
+      return next;
+    });
   }
 
   const visibleWorkouts = showAllWorkouts ? workouts : workouts.slice(0, MAX_VISIBLE_WORKOUTS);
@@ -214,6 +241,18 @@ export default function HomeScreen({ onStartTimer, onManageWorkouts, onCreateWor
                   </svg>
                 )}
               </button>
+
+              <div className="settings-switch-group">
+                <span className="settings-switch-label">BATTERY SAVER</span>
+                <button
+                  className={`settings-switch-btn ${batterySaverMode ? 'is-on' : 'is-off'}`}
+                  onClick={handleToggleBatterySaver}
+                  type="button"
+                  title={batterySaverMode ? 'Battery Saver On' : 'Battery Saver Off'}
+                >
+                  {batterySaverMode ? 'ON' : 'OFF'}
+                </button>
+              </div>
             </div>
           )}
         </div>

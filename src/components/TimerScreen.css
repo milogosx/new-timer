@@ -12,6 +12,22 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.timer-screen.battery-saver-active {
+  background-image: none;
+}
+
+.timer-screen.battery-saver-active .header-main,
+.timer-screen.battery-saver-active .session-progress-fill,
+.timer-screen.battery-saver-active .ctrl-btn-main,
+.timer-screen.battery-saver-active .timer-music-fab.is-on {
+  text-shadow: none;
+  box-shadow: none;
+}
+
+.timer-screen.battery-saver-active .ctrl-btn-pulse {
+  animation: none;
+}
+
 /* Header — 2-row layout */
 .timer-header {
   width: 100%;

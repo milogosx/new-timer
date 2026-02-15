@@ -15,6 +15,7 @@ function TimerCircle({
   progress,
   countdownNumber,
   timerMode, // 'idle' | 'running' | 'rest'
+  suppressAmbientEffects = false,
 }) {
   const bgColor = CIRCLE_COLORS[circleColor] || CIRCLE_COLORS.black;
   const textColor = '#FFFFFF';
@@ -28,13 +29,16 @@ function TimerCircle({
 
   // Mode class for ring color
   const modeClass = timerMode === 'rest' ? 'mode-rest' : timerMode === 'idle' ? 'mode-idle' : 'mode-running';
+  const wrapperClass = `timer-circle-wrapper ${modeClass}${suppressAmbientEffects ? ' effects-static' : ''}`;
 
   return (
-    <div className={`timer-circle-wrapper ${modeClass}`}>
+    <div className={wrapperClass}>
       {/* ECG pulse behind the timer */}
-      <div className="timer-ecg-bg">
-        <AmbientEcgPulse />
-      </div>
+      {!suppressAmbientEffects && (
+        <div className="timer-ecg-bg">
+          <AmbientEcgPulse />
+        </div>
+      )}
 
       <div className="timer-circle-border">
         <svg className="progress-ring" viewBox="0 0 320 320">

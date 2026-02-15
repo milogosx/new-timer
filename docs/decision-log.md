@@ -85,3 +85,12 @@ Last updated: February 15, 2026
 - Alternatives considered: keep endpoints open; simple static secret only.
 - Consequence: Requires selecting auth model and rollout plan before expansion.
 - Status: accepted (deferred)
+
+### D-009
+
+- Date: 2026-02-15
+- Decision: Add user-controlled Battery Saver mode that reduces timer-screen effects and switches timer ticks to coarse cadence.
+- Context: Long workout sessions on iPhone showed elevated heat/battery use versus expected timer-app baseline.
+- Alternatives considered: keep full effects always on; remove effects globally with no toggle.
+- Consequence: Lower sustained rendering/animation load on mobile while preserving timing accuracy via monotonic elapsed-time derivation.
+- Status: implemented

@@ -38,12 +38,13 @@ flowchart TD
 
 - Session start:
   - Home screen reads settings/workout templates from storage.
+  - Settings include `batterySaverMode`, passed through App timer config to Timer screen.
   - `cloudProfileSync` hydrates workout profile from Netlify (if reachable) in background.
   - Home/Library can re-render after hydration without blocking initial app interaction.
   - App passes selected session config to Timer screen.
   - Timer screen initializes exercise progress and timer hook.
 - Active session:
-  - `useTimer` maintains timing state and interval progression.
+  - `useTimer` maintains timing state and interval progression (RAF by default, coarse interval when battery saver is active).
   - Timer screen owns checklist progress; metadata is persisted with session state.
 - Resume flow:
   - Timer screen reads saved session.
@@ -64,7 +65,7 @@ flowchart TD
 - Cloud profile hydration/write queue: `src/utils/cloudProfileSync.js`.
 - Netlify profile endpoints: `netlify/functions/profile-read.js`, `netlify/functions/profile-write.js`.
 - Cloud merge/conflict policy: `netlify/profileStore.js`.
-- Session/settings/audio prefs: `src/utils/storage.js`.
+- Session/settings/audio prefs (including battery saver preference): `src/utils/storage.js`.
 - Screen flow constants: `src/constants/appState.js`.
 
 ## Extension Points

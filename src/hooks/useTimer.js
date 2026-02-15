@@ -11,6 +11,7 @@ import { advanceIntervalState } from '../utils/timerTickMath';
 import { shouldPersistRunningSession } from '../utils/sessionPersistenceCadence';
 
 const RUNNING_PERSIST_MIN_INTERVAL_MS = 1000;
+const MIN_COARSE_TICK_MS = 100;
 
 function monotonicNow() {
   if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
@@ -25,7 +26,18 @@ function safeMs(value) {
   return parsed;
 }
 
-export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null) {
+function normalizeTickIntervalMs(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+  return Math.max(MIN_COARSE_TICK_MS, Math.floor(parsed));
+}
+
+export function useTimer(
+  sessionMinutes,
+  intervalSeconds,
+  sessionMetadata = null,
+  tickIntervalMs = 0
+) {
   const sessionDurationSec = sessionMinutes * 60;
   const defaultIntervalSec = intervalSeconds;
 
@@ -56,6 +68,7 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
   const intervalElapsedBeforeRunRef = useRef(0);
 
   const rafRef = useRef(null);
+  const timeoutRef = useRef(null);
   const tickRef = useRef(null);
   const intervalCountRef = useRef(0);
   const circleColorRef = useRef('black');
@@ -66,6 +79,7 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
   const countdownTokenRef = useRef(0);
   const sessionMetadataRef = useRef(sessionMetadata);
   const lastRunningPersistAtRef = useRef(0);
+  const tickIntervalMsRef = useRef(normalizeTickIntervalMs(tickIntervalMs));
 
   // Keep refs in sync
   useEffect(() => {
@@ -80,6 +94,9 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
   useEffect(() => {
     sessionMetadataRef.current = sessionMetadata;
   }, [sessionMetadata]);
+  useEffect(() => {
+    tickIntervalMsRef.current = normalizeTickIntervalMs(tickIntervalMs);
+  }, [tickIntervalMs]);
 
   const clearCountdownTimeouts = useCallback(() => {
     countdownTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
@@ -150,10 +167,23 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
   }, []);
 
   // Stable function that always calls the latest tick via ref
   const scheduleTick = useCallback(() => {
+    const delayMs = tickIntervalMsRef.current;
+    if (delayMs > 0) {
+      timeoutRef.current = setTimeout(() => {
+        timeoutRef.current = null;
+        if (tickRef.current) tickRef.current();
+      }, delayMs);
+      return;
+    }
+
     rafRef.current = requestAnimationFrame(() => {
       if (tickRef.current) tickRef.current();
     });

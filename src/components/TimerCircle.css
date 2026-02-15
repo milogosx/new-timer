@@ -60,6 +60,11 @@
   transition: opacity 0.4s ease;
 }
 
+.timer-circle-wrapper.effects-static .timer-circle-border::before {
+  animation: none;
+  opacity: 0.32;
+}
+
 @keyframes rotateBorder {
   0% {
     transform: rotate(0deg);
@@ -82,6 +87,10 @@
 
 .progress-ring-fill {
   transition: stroke-dashoffset 0.3s ease;
+}
+
+.timer-circle-wrapper.effects-static .progress-ring-fill {
+  transition: none;
 }
 
 /* Inner circle */
@@ -110,6 +119,10 @@
   text-shadow: 0 0 24px rgba(240, 240, 245, 0.1);
 }
 
+.timer-circle-wrapper.effects-static .timer-display {
+  text-shadow: none;
+}
+
 /* Countdown number */
 .countdown-number {
   font-family: var(--font-display);
@@ -117,6 +130,10 @@
   font-weight: 900;
   color: var(--text-primary);
   text-shadow: 0 0 30px rgba(240, 240, 245, 0.12);
+}
+
+.timer-circle-wrapper.effects-static .countdown-number {
+  text-shadow: none;
 }
 
 /* Keep size consistent between browser and PWA so controls stay comfortably sized. */
