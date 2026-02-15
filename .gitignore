@@ -28,3 +28,4 @@ dist-ssr
 
 # Local artifacts
 ScreenRecording.MP4
+output/playwright/

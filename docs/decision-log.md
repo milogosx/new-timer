@@ -39,7 +39,7 @@ Last updated: February 15, 2026
 - Context: Wake lock/audio policies vary by browser/device.
 - Alternatives considered: broad legacy support guarantees; single-browser optimization.
 - Consequence: Clear product expectation and simpler compatibility model.
-- Status: accepted
+- Status: implemented
 
 ### D-004
 

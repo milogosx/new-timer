@@ -29,6 +29,7 @@ Other scripts:
 ```bash
 npm run lint
 npm test
+npm run test:e2e
 npm run build
 npm run preview
 ```

@@ -8,13 +8,44 @@ Last updated: February 15, 2026
   - timer derivation and formatting (`src/utils/timerLogic.js`)
   - storage/migration contracts (`src/utils/workoutStorage.js`)
   - deterministic waveform geometry (`src/utils/ecgWaveform.js`)
+  - session cadence and resume policy contracts (`src/utils/sessionPersistenceCadence.js`, `src/utils/sessionResumePolicy.js`)
 - Integration-focused unit tests (targeted additions):
   - timer lifecycle transitions in `useTimer` (partially covered via resume-status/cadence contracts)
   - resume-session matching logic in `TimerScreen` (`sessionResumePolicy` coverage)
+- E2E smoke (minimal, production build):
+  - `scripts/e2e-smoke.mjs` validates start -> pause -> resume -> reset on Chromium
 - Manual smoke tests (required for UI/browser API behavior):
   - wake lock indicators
   - audio unlock behavior
   - theme persistence and splash behavior
+
+## Browser/Device Support Matrix
+
+| Capability | Baseline target | Expected behavior |
+|---|---|---|
+| Core timer UI | Modern mobile Safari, modern Chromium mobile | Full support |
+| Wake Lock API | Chromium mobile (supported), Safari mobile (limited) | Use wake lock when available; no crash when unavailable |
+| Audio autoplay policies | Safari/Chromium mobile | Audio unlock via user interaction; fallback to silent-safe behavior |
+| Vibration/haptics | Device/browser dependent | Best-effort only, no hard dependency |
+
+## Wake Lock + Audio QA Checklist
+
+- Device setup:
+  - ensure volume is on and device is not in silent-only testing mode
+  - disable low-power restrictions where possible for consistency
+- Wake lock checks:
+  - start session and confirm lock indicator appears while active
+  - background app for ~20s and return; timer catches up and app remains usable
+  - verify no crash or stuck UI when wake lock is unsupported/denied
+- Audio checks:
+  - first user interaction unlocks audio pathway
+  - countdown beeps play during start sequence
+  - interval bell plays on interval boundaries
+  - background music toggle on/off updates immediately and persists across reload
+- Resume checks:
+  - paused session reload restores paused state
+  - running session reload restores running state
+  - mismatched session config shows safe discard path
 
 ## Critical Behavior Matrix
 
@@ -37,6 +68,7 @@ Last updated: February 15, 2026
 
 - Lint gate: `npm run lint`
 - Test gate: `npm test`
+- E2E smoke gate (local/CI): `npm run test:e2e`
 - CI gate: GitHub Actions workflow (`.github/workflows/ci.yml`) runs `lint`, `test`, and `build` on pushes/PRs.
 - Refactor gate: keep both green before and after structure-only changes.
 
@@ -49,7 +81,7 @@ Last updated: February 15, 2026
 
 ## Known Gaps
 
-- No full E2E browser automation yet.
+- E2E currently covers one primary happy-path flow (Chromium only).
 - No automated performance regression checks for persistence cadence.
 - Wake lock/audio behavior still depends on manual cross-device verification.
 - Hook-level timer lifecycle transitions still rely mostly on unit contracts and manual smoke (no dedicated hook test harness yet).
