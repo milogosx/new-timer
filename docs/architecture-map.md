@@ -38,7 +38,7 @@ flowchart TD
 
 - Session start:
   - Home screen reads settings/workout templates from storage.
-  - `cloudProfileSync` hydrates workout profile from Netlify (if reachable) before first screen render.
+  - `cloudProfileSync` hydrates workout profile from Netlify (if reachable) in background.
   - App passes selected session config to Timer screen.
   - Timer screen initializes exercise progress and timer hook.
 - Active session:

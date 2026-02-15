@@ -6,6 +6,9 @@ const CARDIOS_KEY = 'eliteTimer_cardios';
 const WORKOUTS_SCHEMA_KEY = 'eliteTimer_workouts_schema';
 const WARMUPS_SCHEMA_KEY = 'eliteTimer_warmups_schema';
 const CARDIOS_SCHEMA_KEY = 'eliteTimer_cardios_schema';
+const DELETED_DEFAULT_WORKOUT_IDS_KEY = 'eliteTimer_deletedDefaultWorkoutIds';
+const DELETED_DEFAULT_WARMUP_IDS_KEY = 'eliteTimer_deletedDefaultWarmupIds';
+const DELETED_DEFAULT_CARDIO_IDS_KEY = 'eliteTimer_deletedDefaultCardioIds';
 const WORKOUTS_SCHEMA_VERSION = 3;
 const WARMUPS_SCHEMA_VERSION = 2;
 const CARDIOS_SCHEMA_VERSION = 1;
@@ -46,6 +49,26 @@ function safeParseArray(raw) {
     console.error('Failed to parse stored array JSON:', err);
     return null;
   }
+}
+
+function safeParseStringArray(raw) {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.filter((item) => typeof item === 'string' && item.trim());
+  } catch (err) {
+    console.error('Failed to parse stored string array JSON:', err);
+    return null;
+  }
+}
+
+function loadDeletedDefaultIds(key) {
+  return new Set(safeParseStringArray(safeGetItem(key)) || []);
+}
+
+function saveDeletedDefaultIds(key, ids) {
+  safeSetItem(key, JSON.stringify([...new Set(ids)]));
 }
 
 // Default sample workouts
@@ -197,8 +220,9 @@ function createCanonicalWorkouts() {
   return deepClone(DEFAULT_WORKOUTS);
 }
 
-function upsertCanonicalWorkouts(workouts, treatLegacyAsStarter = false) {
-  const canonical = createCanonicalWorkouts();
+function upsertCanonicalWorkouts(workouts, deletedDefaultIds = new Set(), treatLegacyAsStarter = false) {
+  const canonical = createCanonicalWorkouts()
+    .filter((workout) => !deletedDefaultIds.has(workout.id));
 
   // Map of stored workouts by ID for quick lookup
   const storedMap = new Map(workouts.map((w) => [w.id, w]));
@@ -219,6 +243,7 @@ function upsertCanonicalWorkouts(workouts, treatLegacyAsStarter = false) {
   const canonicalIds = new Set(canonical.map((c) => c.id));
   const custom = workouts.filter((workout) => {
     if (canonicalIds.has(workout.id)) return false; // Already handled in mergedCanonical
+    if (deletedDefaultIds.has(workout.id)) return false;
     if (treatLegacyAsStarter && looksLikeLegacyWorkout(workout)) return false;
     return true;
   });
@@ -238,11 +263,13 @@ function shouldWriteBack(needsMigration, normalizedJson, migratedJson) {
 
 export function loadWorkouts() {
   const storedWorkouts = safeParseArray(safeGetItem(WORKOUTS_KEY));
+  const deletedDefaultIds = loadDeletedDefaultIds(DELETED_DEFAULT_WORKOUT_IDS_KEY);
   const storedVersion = readSchemaVersion(WORKOUTS_SCHEMA_KEY);
   const needsMigration = storedVersion !== WORKOUTS_SCHEMA_VERSION;
 
   if (!storedWorkouts) {
-    const canonical = createCanonicalWorkouts();
+    const canonical = createCanonicalWorkouts()
+      .filter((workout) => !deletedDefaultIds.has(workout.id));
     saveWorkouts(canonical);
     return canonical;
   }
@@ -251,7 +278,7 @@ export function loadWorkouts() {
     .map((workout, index) => normalizeWorkoutRecord(workout, index))
     .filter(Boolean);
 
-  const migrated = upsertCanonicalWorkouts(normalized, needsMigration);
+  const migrated = upsertCanonicalWorkouts(normalized, deletedDefaultIds, needsMigration);
   const normalizedJson = JSON.stringify(normalized);
   const migratedJson = JSON.stringify(migrated);
 
@@ -265,9 +292,11 @@ export function loadWorkouts() {
 export function saveWorkouts(workouts) {
   safeSetItem(WORKOUTS_KEY, JSON.stringify(workouts));
   safeSetItem(WORKOUTS_SCHEMA_KEY, String(WORKOUTS_SCHEMA_VERSION));
+  const deletedDefaultWorkoutIds = [...loadDeletedDefaultIds(DELETED_DEFAULT_WORKOUT_IDS_KEY)];
   queueCloudProfileSync({
     workouts,
     workoutsSchemaVersion: WORKOUTS_SCHEMA_VERSION,
+    deletedDefaultWorkoutIds,
   });
 }
 
@@ -297,6 +326,11 @@ export function updateWorkout(id, updates) {
 
 export function deleteWorkout(id) {
   const workouts = loadWorkouts().filter((w) => w.id !== id);
+  if (DEFAULT_WORKOUT_ID_SET.has(id)) {
+    const deletedDefaultIds = loadDeletedDefaultIds(DELETED_DEFAULT_WORKOUT_IDS_KEY);
+    deletedDefaultIds.add(id);
+    saveDeletedDefaultIds(DELETED_DEFAULT_WORKOUT_IDS_KEY, deletedDefaultIds);
+  }
   saveWorkouts(workouts);
   return workouts;
 }
@@ -311,6 +345,7 @@ export function togglePinWorkout(id) {
 }
 
 export function resetAllWorkouts() {
+  saveDeletedDefaultIds(DELETED_DEFAULT_WORKOUT_IDS_KEY, []);
   const canonical = createCanonicalWorkouts();
   saveWorkouts(canonical);
   return canonical;
@@ -407,24 +442,35 @@ function createCanonicalWarmups() {
   return deepClone(DEFAULT_WARMUPS);
 }
 
-function upsertCanonicalWarmups(warmups, treatLegacyAsStarter = false) {
-  const canonical = createCanonicalWarmups();
+function upsertCanonicalWarmups(warmups, deletedDefaultIds = new Set(), treatLegacyAsStarter = false) {
+  const canonical = createCanonicalWarmups()
+    .filter((warmup) => !deletedDefaultIds.has(warmup.id));
+  const storedMap = new Map(warmups.map((warmup) => [warmup.id, warmup]));
+  const mergedCanonical = canonical.map((canonicalWarmup) => {
+    const stored = storedMap.get(canonicalWarmup.id);
+    return stored || canonicalWarmup;
+  });
+  const canonicalIdSet = new Set(mergedCanonical.map((warmup) => warmup.id));
+
   const custom = warmups.filter((warmup) => {
-    if (DEFAULT_WARMUP_ID_SET.has(warmup.id)) return false;
+    if (canonicalIdSet.has(warmup.id)) return false;
+    if (deletedDefaultIds.has(warmup.id)) return false;
     if (treatLegacyAsStarter && looksLikeLegacyWarmup(warmup)) return false;
     return true;
   });
 
-  return [...canonical, ...custom];
+  return [...mergedCanonical, ...custom];
 }
 
 export function loadWarmups() {
   const storedWarmups = safeParseArray(safeGetItem(WARMUPS_KEY));
+  const deletedDefaultIds = loadDeletedDefaultIds(DELETED_DEFAULT_WARMUP_IDS_KEY);
   const storedVersion = readSchemaVersion(WARMUPS_SCHEMA_KEY);
   const needsMigration = storedVersion !== WARMUPS_SCHEMA_VERSION;
 
   if (!storedWarmups) {
-    const canonical = createCanonicalWarmups();
+    const canonical = createCanonicalWarmups()
+      .filter((warmup) => !deletedDefaultIds.has(warmup.id));
     saveWarmups(canonical);
     return canonical;
   }
@@ -433,7 +479,7 @@ export function loadWarmups() {
     .map((warmup, index) => normalizeWarmupRecord(warmup, index))
     .filter(Boolean);
 
-  const migrated = upsertCanonicalWarmups(normalized, needsMigration);
+  const migrated = upsertCanonicalWarmups(normalized, deletedDefaultIds, needsMigration);
   const normalizedJson = JSON.stringify(normalized);
   const migratedJson = JSON.stringify(migrated);
 
@@ -447,9 +493,11 @@ export function loadWarmups() {
 export function saveWarmups(warmups) {
   safeSetItem(WARMUPS_KEY, JSON.stringify(warmups));
   safeSetItem(WARMUPS_SCHEMA_KEY, String(WARMUPS_SCHEMA_VERSION));
+  const deletedDefaultWarmupIds = [...loadDeletedDefaultIds(DELETED_DEFAULT_WARMUP_IDS_KEY)];
   queueCloudProfileSync({
     warmups,
     warmupsSchemaVersion: WARMUPS_SCHEMA_VERSION,
+    deletedDefaultWarmupIds,
   });
 }
 
@@ -476,6 +524,11 @@ export function updateWarmup(id, updates) {
 
 export function deleteWarmup(id) {
   const warmups = loadWarmups().filter((w) => w.id !== id);
+  if (DEFAULT_WARMUP_ID_SET.has(id)) {
+    const deletedDefaultIds = loadDeletedDefaultIds(DELETED_DEFAULT_WARMUP_IDS_KEY);
+    deletedDefaultIds.add(id);
+    saveDeletedDefaultIds(DELETED_DEFAULT_WARMUP_IDS_KEY, deletedDefaultIds);
+  }
   saveWarmups(warmups);
   // Also remove this warmup from any workouts that reference it
   const workouts = loadWorkouts();
@@ -491,6 +544,7 @@ export function deleteWarmup(id) {
 }
 
 export function resetAllWarmups() {
+  saveDeletedDefaultIds(DELETED_DEFAULT_WARMUP_IDS_KEY, []);
   const canonical = createCanonicalWarmups();
   saveWarmups(canonical);
   return canonical;
@@ -575,24 +629,35 @@ function createCanonicalCardios() {
   return deepClone(DEFAULT_CARDIOS);
 }
 
-function upsertCanonicalCardios(cardios, treatLegacyAsStarter = false) {
-  const canonical = createCanonicalCardios();
+function upsertCanonicalCardios(cardios, deletedDefaultIds = new Set(), treatLegacyAsStarter = false) {
+  const canonical = createCanonicalCardios()
+    .filter((cardio) => !deletedDefaultIds.has(cardio.id));
+  const storedMap = new Map(cardios.map((cardio) => [cardio.id, cardio]));
+  const mergedCanonical = canonical.map((canonicalCardio) => {
+    const stored = storedMap.get(canonicalCardio.id);
+    return stored || canonicalCardio;
+  });
+  const canonicalIdSet = new Set(mergedCanonical.map((cardio) => cardio.id));
+
   const custom = cardios.filter((cardio) => {
-    if (DEFAULT_CARDIO_ID_SET.has(cardio.id)) return false;
+    if (canonicalIdSet.has(cardio.id)) return false;
+    if (deletedDefaultIds.has(cardio.id)) return false;
     if (treatLegacyAsStarter && looksLikeLegacyCardio(cardio)) return false;
     return true;
   });
 
-  return [...canonical, ...custom];
+  return [...mergedCanonical, ...custom];
 }
 
 export function loadCardios() {
   const storedCardios = safeParseArray(safeGetItem(CARDIOS_KEY));
+  const deletedDefaultIds = loadDeletedDefaultIds(DELETED_DEFAULT_CARDIO_IDS_KEY);
   const storedVersion = readSchemaVersion(CARDIOS_SCHEMA_KEY);
   const needsMigration = storedVersion !== CARDIOS_SCHEMA_VERSION;
 
   if (!storedCardios) {
-    const canonical = createCanonicalCardios();
+    const canonical = createCanonicalCardios()
+      .filter((cardio) => !deletedDefaultIds.has(cardio.id));
     saveCardios(canonical);
     return canonical;
   }
@@ -601,7 +666,7 @@ export function loadCardios() {
     .map((cardio, index) => normalizeCardioRecord(cardio, index))
     .filter(Boolean);
 
-  const migrated = upsertCanonicalCardios(normalized, needsMigration);
+  const migrated = upsertCanonicalCardios(normalized, deletedDefaultIds, needsMigration);
   const normalizedJson = JSON.stringify(normalized);
   const migratedJson = JSON.stringify(migrated);
 
@@ -615,9 +680,11 @@ export function loadCardios() {
 export function saveCardios(cardios) {
   safeSetItem(CARDIOS_KEY, JSON.stringify(cardios));
   safeSetItem(CARDIOS_SCHEMA_KEY, String(CARDIOS_SCHEMA_VERSION));
+  const deletedDefaultCardioIds = [...loadDeletedDefaultIds(DELETED_DEFAULT_CARDIO_IDS_KEY)];
   queueCloudProfileSync({
     cardios,
     cardiosSchemaVersion: CARDIOS_SCHEMA_VERSION,
+    deletedDefaultCardioIds,
   });
 }
 
@@ -644,6 +711,11 @@ export function updateCardio(id, updates) {
 
 export function deleteCardio(id) {
   const cardios = loadCardios().filter((c) => c.id !== id);
+  if (DEFAULT_CARDIO_ID_SET.has(id)) {
+    const deletedDefaultIds = loadDeletedDefaultIds(DELETED_DEFAULT_CARDIO_IDS_KEY);
+    deletedDefaultIds.add(id);
+    saveDeletedDefaultIds(DELETED_DEFAULT_CARDIO_IDS_KEY, deletedDefaultIds);
+  }
   saveCardios(cardios);
   // Also remove this cardio from any workouts that reference it
   const workouts = loadWorkouts();
@@ -659,6 +731,7 @@ export function deleteCardio(id) {
 }
 
 export function resetAllCardios() {
+  saveDeletedDefaultIds(DELETED_DEFAULT_CARDIO_IDS_KEY, []);
   const canonical = createCanonicalCardios();
   saveCardios(canonical);
   return canonical;

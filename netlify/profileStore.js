@@ -23,6 +23,11 @@ function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function sanitizeStringArray(value) {
+  if (!Array.isArray(value)) return null;
+  return value.filter((entry) => typeof entry === 'string' && entry.trim());
+}
+
 function normalizeProfileRecord(value) {
   if (!value || typeof value !== 'object') return null;
 
@@ -41,6 +46,15 @@ function normalizeProfileRecord(value) {
   const cardiosSchemaVersion = toSafeInt(value.cardiosSchemaVersion, 0);
   if (cardiosSchemaVersion > 0) profile.cardiosSchemaVersion = cardiosSchemaVersion;
 
+  const deletedDefaultWorkoutIds = sanitizeStringArray(value.deletedDefaultWorkoutIds);
+  if (deletedDefaultWorkoutIds) profile.deletedDefaultWorkoutIds = deletedDefaultWorkoutIds;
+
+  const deletedDefaultWarmupIds = sanitizeStringArray(value.deletedDefaultWarmupIds);
+  if (deletedDefaultWarmupIds) profile.deletedDefaultWarmupIds = deletedDefaultWarmupIds;
+
+  const deletedDefaultCardioIds = sanitizeStringArray(value.deletedDefaultCardioIds);
+  if (deletedDefaultCardioIds) profile.deletedDefaultCardioIds = deletedDefaultCardioIds;
+
   const updatedAt = Math.max(
     0,
     toSafeInt(value.updatedAt, 0),
@@ -50,7 +64,10 @@ function normalizeProfileRecord(value) {
 
   const hasContent = Array.isArray(profile.workouts)
     || Array.isArray(profile.warmups)
-    || Array.isArray(profile.cardios);
+    || Array.isArray(profile.cardios)
+    || Array.isArray(profile.deletedDefaultWorkoutIds)
+    || Array.isArray(profile.deletedDefaultWarmupIds)
+    || Array.isArray(profile.deletedDefaultCardioIds);
 
   if (!hasContent) return null;
   if (!profile.updatedAt) profile.updatedAt = Date.now();

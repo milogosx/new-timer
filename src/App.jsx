@@ -39,7 +39,7 @@ function App() {
   const [editingCardio, setEditingCardio] = useState(null);
   // Track where editor should return to ('home' or 'library')
   const [editorReturnTo, setEditorReturnTo] = useState(EDITOR_RETURN.LIBRARY);
-  const [isStorageReady, setIsStorageReady] = useState(false);
+  const [storageRevision, setStorageRevision] = useState(0);
 
   // Detect PWA standalone mode (iOS uses navigator.standalone, Android uses matchMedia)
   useEffect(() => {
@@ -80,9 +80,9 @@ function App() {
     let cancelled = false;
 
     async function initializeCloudProfile() {
-      await bootstrapCloudProfile();
-      if (!cancelled) {
-        setIsStorageReady(true);
+      const result = await bootstrapCloudProfile();
+      if (!cancelled && result?.status === 'hydrated') {
+        setStorageRevision((previous) => previous + 1);
       }
     }
 
@@ -91,14 +91,6 @@ function App() {
       cancelled = true;
     };
   }, []);
-
-  if (!isStorageReady) {
-    return (
-      <div className="app">
-        <div className="app-loading">Syncing workouts...</div>
-      </div>
-    );
-  }
 
   function handleStartTimer(sessionMinutes, intervalSeconds, workout) {
     setTimerConfig({ sessionMinutes, intervalSeconds, workout });
@@ -185,6 +177,7 @@ function App() {
     <div className="app">
       {screen === SCREENS.HOME && (
         <HomeScreen
+          key={`home-${storageRevision}`}
           onStartTimer={handleStartTimer}
           onManageWorkouts={handleManageWorkouts}
           onCreateWorkout={handleCreateWorkoutFromHome}
@@ -202,6 +195,7 @@ function App() {
       )}
       {screen === SCREENS.LIBRARY && (
         <WorkoutLibrary
+          key={`library-${storageRevision}`}
           onBack={handleLibraryBack}
           onEdit={handleEditWorkout}
           onCreate={handleCreateWorkoutFromLibrary}

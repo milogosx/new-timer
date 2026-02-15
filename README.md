@@ -91,6 +91,9 @@ Schema versions:
 - `eliteTimer_warmups_schema`
 - `eliteTimer_cardios_schema`
 - `eliteTimer_profile_updated_at`
+- `eliteTimer_deletedDefaultWorkoutIds`
+- `eliteTimer_deletedDefaultWarmupIds`
+- `eliteTimer_deletedDefaultCardioIds`
 
 ## Cloud Profile Sync
 
@@ -103,7 +106,7 @@ Schema versions:
 
 Behavior:
 
-- On app boot, cloud profile hydrates local workout data when available.
+- On app boot, cloud profile sync runs in the background and hydrates local workout data when available.
 - Local workout edits queue cloud writes (debounced) so changes become your new defaults.
 - If cloud is unreachable, app keeps working with local data only.
 
