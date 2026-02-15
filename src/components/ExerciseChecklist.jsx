@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './ExerciseChecklist.css';
 
 function formatRest(restSeconds) {
@@ -14,6 +14,25 @@ export default function ExerciseChecklist({ exercises, progress, onToggleSet, on
   const [expanded, setExpanded] = useState(false);
   const [pendingCheck, setPendingCheck] = useState(null); // exercise index being checked off
   const [pendingSetIdx, setPendingSetIdx] = useState(null); // set index being checked off (last set)
+  const pendingTimeoutsRef = useRef(new Set());
+
+  useEffect(() => {
+    const pendingTimeouts = pendingTimeoutsRef.current;
+    return () => {
+      pendingTimeouts.forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+      pendingTimeouts.clear();
+    };
+  }, []);
+
+  function scheduleDelayedToggle(callback) {
+    const timeoutId = setTimeout(() => {
+      pendingTimeoutsRef.current.delete(timeoutId);
+      callback();
+    }, 500);
+    pendingTimeoutsRef.current.add(timeoutId);
+  }
 
   if (!exercises || exercises.length === 0) return null;
 
@@ -43,10 +62,10 @@ export default function ExerciseChecklist({ exercises, progress, onToggleSet, on
     if (!currentlyComplete) {
       // Show check animation then complete after delay
       setPendingCheck(originalIdx);
-      setTimeout(() => {
+      scheduleDelayedToggle(() => {
         setPendingCheck(null);
         onToggleExercise(originalIdx);
-      }, 500);
+      });
     } else {
       onToggleExercise(originalIdx);
     }
@@ -119,11 +138,11 @@ export default function ExerciseChecklist({ exercises, progress, onToggleSet, on
                               // Last set → show green flash, then complete after delay
                               setPendingCheck(originalIdx);
                               setPendingSetIdx(setIdx);
-                              setTimeout(() => {
+                              scheduleDelayedToggle(() => {
                                 setPendingCheck(null);
                                 setPendingSetIdx(null);
                                 onToggleSet(originalIdx, setIdx);
-                              }, 500);
+                              });
                             } else {
                               onToggleSet(originalIdx, setIdx);
                             }
