@@ -6,6 +6,7 @@ import {
 import { playBell, playCountdown, initAudio } from '../utils/audioManager';
 import { saveSessionState, clearSessionState } from '../utils/storage';
 import { requestWakeLock, releaseWakeLock } from '../utils/wakeLock';
+import { buildSessionSnapshot } from '../utils/sessionSnapshot';
 
 const TICK_MS = 250; // Update 4x/sec for smooth display
 
@@ -107,9 +108,9 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
     const elapsedMs = getSessionElapsedMs();
     const intervalElapsedMs = getIntervalElapsedMs();
 
-    saveSessionState({
-      sessionActive: true,
-      sessionStatus: overrideStatus,
+    saveSessionState(buildSessionSnapshot({
+      overrideStatus,
+      nowWall,
       sessionStartTime: sessionStartWallRef.current,
       sessionDuration: sessionDurationSec,
       intervalDuration: defaultIntervalSec,
@@ -117,13 +118,11 @@ export function useTimer(sessionMinutes, intervalSeconds, sessionMetadata = null
       currentIntervalDuration: currentIntervalDurationRef.current,
       intervalCount: intervalCountRef.current,
       intervalState: circleColorRef.current,
-      totalPaused: Math.max(0, nowWall - sessionStartWallRef.current - elapsedMs),
-      intervalPaused: Math.max(0, nowWall - intervalStartWallRef.current - intervalElapsedMs),
       elapsedMs,
       intervalElapsedMs,
       isQuickAdd: isQuickAddRef.current,
-      ...sessionMetadataRef.current,
-    });
+      metadata: sessionMetadataRef.current,
+    }));
     return true;
   }, [defaultIntervalSec, getIntervalElapsedMs, getSessionElapsedMs, sessionDurationSec]);
 

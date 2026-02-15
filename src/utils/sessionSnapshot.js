@@ -1,0 +1,33 @@
+export function buildSessionSnapshot({
+  overrideStatus,
+  nowWall,
+  sessionStartTime,
+  sessionDuration,
+  intervalDuration,
+  currentIntervalStartTime,
+  currentIntervalDuration,
+  intervalCount,
+  intervalState,
+  elapsedMs,
+  intervalElapsedMs,
+  isQuickAdd,
+  metadata,
+}) {
+  return {
+    sessionActive: true,
+    sessionStatus: overrideStatus,
+    sessionStartTime,
+    sessionDuration,
+    intervalDuration,
+    currentIntervalStartTime,
+    currentIntervalDuration,
+    intervalCount,
+    intervalState,
+    totalPaused: Math.max(0, nowWall - sessionStartTime - elapsedMs),
+    intervalPaused: Math.max(0, nowWall - currentIntervalStartTime - intervalElapsedMs),
+    elapsedMs,
+    intervalElapsedMs,
+    isQuickAdd,
+    ...(metadata || {}),
+  };
+}
