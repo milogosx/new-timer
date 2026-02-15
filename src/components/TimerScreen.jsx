@@ -11,6 +11,10 @@ import {
   toggleExerciseProgress,
   toggleSetProgress,
 } from '../utils/exerciseProgress';
+import {
+  doesWorkoutMatchSavedSession,
+  getInitialSavedSession,
+} from '../utils/sessionResumePolicy';
 import { loadSessionState, clearSessionState } from '../utils/storage';
 import { isWakeLockActive, isWakeLockSupported } from '../utils/wakeLock';
 import {
@@ -30,12 +34,7 @@ export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, 
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const bgmState = useBackgroundMusicState();
   const initialSavedSession = useMemo(() => {
-    const saved = loadSessionState();
-    if (!saved || !saved.sessionActive) return null;
-    const timingMatches =
-      saved.sessionDuration === sessionMinutes * 60 &&
-      saved.intervalDuration === intervalSeconds;
-    return { ...saved, timingMatches };
+    return getInitialSavedSession(loadSessionState(), sessionMinutes, intervalSeconds);
   }, [sessionMinutes, intervalSeconds]);
   const [savedSession, setSavedSession] = useState(() => initialSavedSession);
   const [showResumeDialog, setShowResumeDialog] = useState(() => Boolean(initialSavedSession));
@@ -62,7 +61,7 @@ export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, 
 
   const isActive = timer.status === 'running' || timer.status === 'paused' || timer.status === 'countdown';
   const canResumeTiming = Boolean(savedSession?.timingMatches);
-  const workoutMatchesSavedSession = (savedSession?.workoutId || null) === (workout?.id || null);
+  const workoutMatchesSavedSession = doesWorkoutMatchSavedSession(savedSession, workout);
   const isSessionComplete = timer.completedElapsedSeconds > 0;
   const didCompleteHapticRef = useRef(false);
   const { persistSession } = timer;

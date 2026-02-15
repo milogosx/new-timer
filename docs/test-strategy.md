@@ -9,8 +9,8 @@ Last updated: February 15, 2026
   - storage/migration contracts (`src/utils/workoutStorage.js`)
   - deterministic waveform geometry (`src/utils/ecgWaveform.js`)
 - Integration-focused unit tests (targeted additions):
-  - timer lifecycle transitions in `useTimer`
-  - resume-session matching logic in `TimerScreen`
+  - timer lifecycle transitions in `useTimer` (partially covered via resume-status/cadence contracts)
+  - resume-session matching logic in `TimerScreen` (`sessionResumePolicy` coverage)
 - Manual smoke tests (required for UI/browser API behavior):
   - wake lock indicators
   - audio unlock behavior
@@ -37,6 +37,7 @@ Last updated: February 15, 2026
 
 - Lint gate: `npm run lint`
 - Test gate: `npm test`
+- CI gate: GitHub Actions workflow (`.github/workflows/ci.yml`) runs `lint`, `test`, and `build` on pushes/PRs.
 - Refactor gate: keep both green before and after structure-only changes.
 
 ## When To Add Tests
@@ -51,3 +52,4 @@ Last updated: February 15, 2026
 - No full E2E browser automation yet.
 - No automated performance regression checks for persistence cadence.
 - Wake lock/audio behavior still depends on manual cross-device verification.
+- Hook-level timer lifecycle transitions still rely mostly on unit contracts and manual smoke (no dedicated hook test harness yet).
