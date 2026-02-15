@@ -1,4 +1,4 @@
-import { getStore } from '@netlify/blobs';
+import { connectLambda, getStore } from '@netlify/blobs';
 
 const STORE_NAME = 'elite-timer-profiles';
 const PROFILE_ID = globalThis.process?.env?.ELITE_TIMER_PROFILE_ID || 'solo';
@@ -83,6 +83,12 @@ export async function writeStoredProfile(profile) {
   const store = getStore(STORE_NAME);
   await store.set(PROFILE_KEY, JSON.stringify(normalized));
   return normalized;
+}
+
+export function initBlobsContext(event) {
+  if (event) {
+    connectLambda(event);
+  }
 }
 
 export function mergeProfilePatch(existingProfile, patch) {

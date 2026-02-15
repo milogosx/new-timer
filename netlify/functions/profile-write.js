@@ -1,9 +1,10 @@
 import {
+  initBlobsContext,
   jsonResponse,
   mergeProfilePatch,
   readStoredProfile,
   writeStoredProfile,
-} from './profileStore.js';
+} from '../profileStore.js';
 
 function parseBody(event) {
   if (!event?.body) return {};
@@ -26,6 +27,7 @@ export async function handler(event) {
   }
 
   try {
+    initBlobsContext(event);
     const existingProfile = await readStoredProfile();
     const mergedProfile = mergeProfilePatch(existingProfile, patch);
     const savedProfile = await writeStoredProfile(mergedProfile);

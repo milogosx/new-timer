@@ -1,7 +1,8 @@
-import { jsonResponse, readStoredProfile } from './profileStore.js';
+import { initBlobsContext, jsonResponse, readStoredProfile } from '../profileStore.js';
 
-export async function handler() {
+export async function handler(event) {
   try {
+    initBlobsContext(event);
     const profile = await readStoredProfile();
     return jsonResponse(200, { profile });
   } catch (err) {
