@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { memo, useEffect, useRef, useState, useCallback } from 'react';
 
 /**
  * SVG lightning arcs that occasionally jump across the title.
  * Fires every 3-5 seconds, each strike visible for ~400ms.
  */
-export default function ElectricArc({ width = 390, height = 70 }) {
+function ElectricArc({ width = 390, height = 70 }) {
   const [paths, setPaths] = useState([]);
   const timerRef = useRef(null);
+  const clearStrikeRef = useRef(null);
   const keyRef = useRef(0);
 
   // Generate a jagged lightning path between two random x positions
@@ -45,7 +46,8 @@ export default function ElectricArc({ width = 390, height = 70 }) {
     setPaths([lightning]);
 
     // Clear after animation completes
-    setTimeout(() => setPaths([]), 450);
+    if (clearStrikeRef.current) clearTimeout(clearStrikeRef.current);
+    clearStrikeRef.current = setTimeout(() => setPaths([]), 450);
   }, [generateLightning]);
 
   useEffect(() => {
@@ -65,6 +67,7 @@ export default function ElectricArc({ width = 390, height = 70 }) {
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      if (clearStrikeRef.current) clearTimeout(clearStrikeRef.current);
     };
   }, [strike]);
 
@@ -144,3 +147,5 @@ export default function ElectricArc({ width = 390, height = 70 }) {
     </svg>
   );
 }
+
+export default memo(ElectricArc);

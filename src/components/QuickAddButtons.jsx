@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import './QuickAddButtons.css';
 
 const PRESETS = [
@@ -9,7 +9,7 @@ const PRESETS = [
   { label: '3:00', seconds: 180 },
 ];
 
-export default function QuickAddButtons({ onQuickAdd, disabled }) {
+function QuickAddButtons({ onQuickAdd, disabled }) {
   const [showCustom, setShowCustom] = useState(false);
   const [customValue, setCustomValue] = useState('');
 
@@ -71,3 +71,5 @@ export default function QuickAddButtons({ onQuickAdd, disabled }) {
     </div>
   );
 }
+
+export default memo(QuickAddButtons);

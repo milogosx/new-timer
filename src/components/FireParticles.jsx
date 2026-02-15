@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 
-export default function FireParticles({ width = 390, height = 80 }) {
+function FireParticles({ width = 390, height = 80 }) {
   const canvasRef = useRef(null);
   const particlesRef = useRef([]);
   const rafRef = useRef(null);
@@ -86,3 +86,5 @@ export default function FireParticles({ width = 390, height = 80 }) {
     />
   );
 }
+
+export default memo(FireParticles);

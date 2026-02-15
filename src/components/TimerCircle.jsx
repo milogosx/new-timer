@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { formatTime } from '../utils/timerLogic';
 import AmbientEcgPulse from './AmbientEcgPulse';
 import './TimerCircle.css';
@@ -8,7 +9,7 @@ const CIRCLE_COLORS = {
   rest: '#00897B',  // Rest: Teal
 };
 
-export default function TimerCircle({
+function TimerCircle({
   remainingSeconds,
   circleColor,
   progress,
@@ -84,3 +85,5 @@ export default function TimerCircle({
     </div>
   );
 }
+
+export default memo(TimerCircle);

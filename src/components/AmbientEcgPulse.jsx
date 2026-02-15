@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { memo, useId } from 'react';
 import { createDeterministicEcgWaveform } from '../utils/ecgWaveform';
 
 const ECG_GEOMETRY = createDeterministicEcgWaveform();
@@ -8,7 +8,7 @@ const ECG_VIEWBOX_HEIGHT = ECG_GEOMETRY.viewbox.height;
 const MAIN_SPIKE_CENTER_X = ECG_GEOMETRY.bloomAnchor.x;
 const MAIN_SPIKE_CENTER_Y = ECG_GEOMETRY.bloomAnchor.y;
 
-export default function AmbientEcgPulse() {
+function AmbientEcgPulse() {
   const id = useId().replace(/:/g, '');
   const baseGradientId = `home-ecg-base-${id}`;
   const coreGradientId = `home-ecg-core-${id}`;
@@ -127,3 +127,5 @@ export default function AmbientEcgPulse() {
     </svg>
   );
 }
+
+export default memo(AmbientEcgPulse);

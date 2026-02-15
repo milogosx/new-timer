@@ -64,7 +64,7 @@ export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, 
   const workoutMatchesSavedSession = doesWorkoutMatchSavedSession(savedSession, workout);
   const isSessionComplete = timer.completedElapsedSeconds > 0;
   const didCompleteHapticRef = useRef(false);
-  const { persistSession } = timer;
+  const { persistSession, quickAdd } = timer;
 
   useEffect(() => {
     if (timer.completedElapsedSeconds <= 0) {
@@ -162,6 +162,11 @@ export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, 
     setExerciseProgress((prev) => toggleExerciseProgress(prev, exerciseIdx));
   }, []);
 
+  const handleQuickAdd = useCallback((seconds) => {
+    haptic();
+    quickAdd(seconds);
+  }, [quickAdd]);
+
   const mainButtonLabel = {
     idle: 'START',
     countdown: 'STARTING...',
@@ -233,7 +238,7 @@ export default function TimerScreen({ sessionMinutes, intervalSeconds, workout, 
       {/* Quick Add + Controls in one row */}
       <div className="timer-action-row">
         <QuickAddButtons
-          onQuickAdd={(s) => { haptic(); timer.quickAdd(s); }}
+          onQuickAdd={handleQuickAdd}
           disabled={timer.status !== 'running'}
         />
         <div className="timer-controls">
