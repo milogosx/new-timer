@@ -210,6 +210,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = CLOUD_REQUEST_TIM
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(url, {
+      keepalive: true,
       ...options,
       signal: controller.signal,
     });
@@ -393,7 +394,9 @@ export function bindCloudSyncLifecycle() {
     }
   };
   const handlePageHide = () => {
-    flushSoon();
+    if (Object.keys(pendingPatch).length > 0) {
+      void flushPendingPatch();
+    }
   };
 
   window.addEventListener('online', handleOnline);

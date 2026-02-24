@@ -78,10 +78,12 @@ export async function requestWakeLock() {
   keepAwakeRequested = true;
   bindVisibilityListener();
 
-  const nativeAcquired = await requestNativeWakeLock();
-  if (nativeAcquired) {
-    disableNoSleepFallback();
-    return true;
+  if (hasNativeWakeLock()) {
+    const nativeAcquired = await requestNativeWakeLock();
+    if (nativeAcquired) {
+      disableNoSleepFallback();
+      return true;
+    }
   }
 
   return requestNoSleepFallback();
