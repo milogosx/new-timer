@@ -75,7 +75,7 @@ Primary layers:
 - `src/utils/exerciseProgress.js`: checklist progress normalization/toggle helpers.
 - `src/utils/exerciseSanitizer.js`: shared editor save-time exercise normalization.
 - `src/utils/audioManager.js`: bell/countdown SFX + procedural background music.
-- `src/utils/wakeLock.js`: Wake Lock integration.
+- `src/utils/wakeLock.js`: Wake Lock integration with iPhone-safe `nosleep.js` fallback.
 - `src/constants/appState.js`: app screen and editor-return constants.
 - `netlify/functions/profile-read.js`: reads persisted workout profile.
 - `netlify/functions/profile-write.js`: writes merged workout profile updates.

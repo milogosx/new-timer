@@ -327,6 +327,9 @@ export function useTimer(
 
   const start = useCallback(() => {
     initAudio();
+    // iOS fallback wake-lock strategies require a direct user gesture.
+    // Request once on START tap, then keep requesting during active session lifecycle.
+    void requestWakeLock();
     clearCountdownTimeouts();
     const countdownToken = countdownTokenRef.current;
 

@@ -26,7 +26,7 @@ Last updated: February 15, 2026
 | Capability | Baseline target | Expected behavior |
 |---|---|---|
 | Core timer UI | Modern mobile Safari, modern Chromium mobile | Full support |
-| Wake Lock API | Chromium mobile (supported), Safari mobile (limited) | Use wake lock when available; no crash when unavailable |
+| Wake Lock API | Chromium mobile (supported), Safari mobile (limited) | Prefer native wake lock when available; fallback to `nosleep.js` keep-awake path on Safari/iPhone |
 | Audio autoplay policies | Safari/Chromium mobile | Audio unlock via user interaction; fallback to silent-safe behavior |
 | Vibration/haptics | Device/browser dependent | Best-effort only, no hard dependency |
 
@@ -37,6 +37,8 @@ Last updated: February 15, 2026
   - disable low-power restrictions where possible for consistency
 - Wake lock checks:
   - start session and confirm lock indicator appears while active
+  - repeat the same check with Battery Saver enabled and disabled
+  - repeat on both dark and light theme to confirm no theme-coupled regressions
   - background app for ~20s and return; timer catches up and app remains usable
   - verify no crash or stuck UI when wake lock is unsupported/denied
 - Audio checks:
