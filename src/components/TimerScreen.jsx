@@ -3,7 +3,6 @@ import TimerCircle from './TimerCircle';
 import QuickAddButtons from './QuickAddButtons';
 import ExerciseChecklist from './ExerciseChecklist';
 import { useTimer } from '../hooks/useTimer';
-import { useBackgroundMusicState } from '../hooks/useBackgroundMusicState';
 import { formatTime } from '../utils/timerLogic';
 import {
   createExerciseProgress,
@@ -17,9 +16,7 @@ import {
 } from '../utils/sessionResumePolicy';
 import { loadSessionState, clearSessionState } from '../utils/storage';
 import { isWakeLockActive, isWakeLockSupported } from '../utils/wakeLock';
-import {
-  toggleBackgroundMusic,
-} from '../utils/audioManager';
+import { playSpeechAnnouncement } from '../utils/audioManager';
 import { getWarmupExercisesForWorkout, getCardioExercisesForWorkout } from '../utils/workoutStorage';
 import './TimerScreen.css';
 
@@ -29,32 +26,35 @@ function haptic(style = 'light') {
   }
 }
 
+function getTimerMode(circleColor, status) {
+  if (circleColor === 'rest') return 'rest';
+  if (status === 'idle') return 'idle';
+  return 'running';
+}
+
+const WARMUP_DURATION_SEC = 15 * 60;
+
 export default function TimerScreen({
   sessionMinutes,
   intervalSeconds,
   workout,
-  batterySaverMode = false,
   onBack,
 }) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showBackConfirm, setShowBackConfirm] = useState(false);
-  const bgmState = useBackgroundMusicState();
   const initialSavedSession = useMemo(() => {
     return getInitialSavedSession(loadSessionState(), sessionMinutes, intervalSeconds);
   }, [sessionMinutes, intervalSeconds]);
   const [savedSession, setSavedSession] = useState(() => initialSavedSession);
   const [showResumeDialog, setShowResumeDialog] = useState(() => Boolean(initialSavedSession));
 
-  // Merge warm-up exercises (first) with workout exercises
-  const allExercises = useMemo(() => {
+  // Merge warm-up, cardio, and main exercises into a single list
+  const exercises = useMemo(() => {
     const warmupExercises = workout ? getWarmupExercisesForWorkout(workout) : [];
     const cardioExercises = workout ? getCardioExercisesForWorkout(workout) : [];
     const mainExercises = (workout?.exercises || []).map((ex) => ({ ...ex, _isWarmup: false, _isCardio: false }));
     return [...warmupExercises, ...cardioExercises, ...mainExercises];
   }, [workout]);
-
-  // Exercise progress: array of { completed, setsCompleted: [bool] }
-  const exercises = allExercises;
   const [exerciseProgress, setExerciseProgress] = useState(() =>
     createExerciseProgress(exercises)
   );
@@ -67,11 +67,57 @@ export default function TimerScreen({
     sessionMinutes,
     intervalSeconds,
     sessionMetadata,
-    batterySaverMode ? 500 : 0
   );
 
+  const isWarmupPhase = timer.elapsedSeconds < WARMUP_DURATION_SEC && timer.elapsedSeconds < (sessionMinutes * 60);
+  const phaseLabel = isWarmupPhase ? 'WARM UP' : 'WORKOUT';
+
+  const lastAnnouncedSecRef = useRef(-1);
+
+  // Handle Speech Announcements
+  useEffect(() => {
+    if (timer.status !== 'running') return;
+
+    const s = Math.floor(timer.elapsedSeconds);
+    if (s === lastAnnouncedSecRef.current) return;
+
+    const warmupS = WARMUP_DURATION_SEC;
+    const totalS = sessionMinutes * 60;
+
+    let announced = false;
+
+    if (s === 1) {
+      playSpeechAnnouncement('start_warmup');
+      announced = true;
+    } else if (s === warmupS && totalS > warmupS) {
+      playSpeechAnnouncement('warmup_complete');
+      announced = true;
+    } else if (s === Math.floor(totalS * 0.25) && s > warmupS) {
+      playSpeechAnnouncement('quarter_way');
+      announced = true;
+    } else if (s === Math.floor(totalS / 2) && s > warmupS) {
+      playSpeechAnnouncement('halfway');
+      announced = true;
+    } else if (s === Math.floor(totalS * 0.75) && s > warmupS) {
+      playSpeechAnnouncement('three_quarters');
+      announced = true;
+    } else if (s === totalS - 300 && s > warmupS) { // 5 minutes remaining
+      playSpeechAnnouncement('five_minutes');
+      announced = true;
+    } else if (s === totalS - 60 && s > warmupS) { // 1 minute remaining
+      playSpeechAnnouncement('one_minute');
+      announced = true;
+    } else if (s === totalS && s > 0) {
+      playSpeechAnnouncement('workout_complete');
+      announced = true;
+    }
+
+    if (announced) {
+      lastAnnouncedSecRef.current = s;
+    }
+  }, [timer.status, timer.elapsedSeconds, sessionMinutes]);
+
   const isActive = timer.status === 'running' || timer.status === 'paused' || timer.status === 'countdown';
-  const reduceEffects = batterySaverMode && isActive;
   const canResumeTiming = Boolean(savedSession?.timingMatches);
   const workoutMatchesSavedSession = doesWorkoutMatchSavedSession(savedSession, workout);
   const isSessionComplete = timer.completedElapsedSeconds > 0;
@@ -186,17 +232,11 @@ export default function TimerScreen({
     paused: 'RESUME',
   }[timer.status] || 'START';
 
-  // Session progress (0 to 100)
-  const sessionDurationSec = sessionMinutes * 60;
-  const sessionProgressPct = sessionDurationSec > 0
-    ? Math.min(100, (timer.elapsedSeconds / sessionDurationSec) * 100)
-    : 0;
-
   // Completed exercise count
   const completedExercises = exerciseProgress.filter((p) => p.completed).length;
 
   return (
-    <div className={`timer-screen ${reduceEffects ? 'battery-saver-active' : ''}`}>
+    <div className="timer-screen">
       {/* Header — compact nav row */}
       <header className="timer-header">
         <div className="timer-header-row">
@@ -204,7 +244,9 @@ export default function TimerScreen({
             ←
           </button>
           <div className="header-titles">
-            <h1 className="header-main">WORKOUT TIMER</h1>
+            <h1 className={`header-main ${isWarmupPhase ? 'phase-warmup' : 'phase-workout'}`}>
+              {phaseLabel}
+            </h1>
           </div>
           <div className="timer-header-controls">
             {isWakeLockSupported() && isActive ? (
@@ -221,21 +263,13 @@ export default function TimerScreen({
         )}
       </header>
 
-      {/* Session Progress Bar */}
-      {isActive && !batterySaverMode && (
-        <div className="session-progress-bar">
-          <div className="session-progress-fill" style={{ width: `${sessionProgressPct}%` }} />
-        </div>
-      )}
-
       {/* Timer Circle */}
       <TimerCircle
         remainingSeconds={timer.intervalRemaining}
         circleColor={timer.circleColor}
         progress={timer.intervalProgress}
         countdownNumber={timer.countdownNumber}
-        timerMode={timer.circleColor === 'rest' ? 'rest' : timer.status === 'idle' ? 'idle' : 'running'}
-        suppressAmbientEffects={reduceEffects}
+        timerMode={getTimerMode(timer.circleColor, timer.status)}
       />
 
       {/* Interval & Elapsed Info — spread apart */}
@@ -313,28 +347,6 @@ export default function TimerScreen({
           </div>
         </div>
       )}
-
-      {/* Floating music button — bottom right */}
-      <button
-        className={`timer-music-fab ${bgmState.enabled ? 'is-on' : 'is-off'}`}
-        onClick={() => toggleBackgroundMusic()}
-        type="button"
-        title={bgmState.enabled ? 'Music On' : 'Music Off'}
-      >
-        {bgmState.enabled ? (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-          </svg>
-        ) : (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-            <line x1="23" y1="9" x2="17" y2="15" />
-            <line x1="17" y1="9" x2="23" y2="15" />
-          </svg>
-        )}
-      </button>
 
       {/* Reset Confirmation Dialog */}
       {showResetConfirm && (

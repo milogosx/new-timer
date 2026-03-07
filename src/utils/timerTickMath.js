@@ -23,7 +23,7 @@ export function advanceIntervalState({
     nextIntervalElapsedMs -= nextActiveDurationMs;
     completions += 1;
     nextIntervalCount += 1;
-    nextCircleColor = getNextCircleColor(nextCircleColor, false);
+    nextCircleColor = getNextCircleColor(nextCircleColor);
     nextDurationSec = defaultIntervalSec;
     nextActiveDurationMs = Math.max(1, nextDurationSec * 1000);
   }

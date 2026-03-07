@@ -17,32 +17,11 @@ function toSafeNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-export function calculateElapsed(startTimestamp, pausedDuration = 0) {
-  const startMs = normalizeEpochMs(startTimestamp);
-  if (!startMs) return 0;
-  const pausedMs = Math.max(0, toSafeNumber(pausedDuration, 0));
-  return Math.floor((Date.now() - startMs - pausedMs) / 1000);
-}
-
-export function calculateIntervalRemaining(intervalStartTimestamp, intervalDuration, pausedDuration = 0) {
-  const startMs = normalizeEpochMs(intervalStartTimestamp);
-  if (!startMs) return intervalDuration;
-  const pausedMs = Math.max(0, toSafeNumber(pausedDuration, 0));
-  const elapsed = Math.floor((Date.now() - startMs - pausedMs) / 1000);
-  const remaining = intervalDuration - elapsed;
-  return Math.max(0, remaining);
-}
-
 export function formatTime(totalSeconds) {
   const safeSeconds = Number.isFinite(totalSeconds) ? Math.max(0, totalSeconds) : 0;
   const minutes = Math.floor(safeSeconds / 60);
   const seconds = Math.floor(safeSeconds % 60);
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
-
-export function calculateTotalIntervals(sessionDurationSeconds, intervalDurationSeconds) {
-  if (!intervalDurationSeconds) return 0;
-  return Math.ceil(sessionDurationSeconds / intervalDurationSeconds);
 }
 
 export function getNextCircleColor(currentColor) {
@@ -110,9 +89,14 @@ export function deriveResumedIntervalState(savedState, now = Date.now()) {
     currentIntervalDuration = defaultIntervalDuration;
   }
 
-  let intervalState = savedState.intervalState === 'teal' ? 'teal' : savedState.intervalState === 'rest' ? 'rest' : 'black';
+  let intervalState;
+  switch (savedState.intervalState) {
+    case 'teal': intervalState = 'teal'; break;
+    case 'rest': intervalState = 'rest'; break;
+    default:     intervalState = 'black'; break;
+  }
   for (let i = 0; i < intervalsPassed; i += 1) {
-    intervalState = getNextCircleColor(intervalState, false);
+    intervalState = getNextCircleColor(intervalState);
   }
 
   return {

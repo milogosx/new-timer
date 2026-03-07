@@ -3,7 +3,7 @@ import {
   deriveResumedIntervalState,
   resolveResumedSessionStatus,
 } from '../utils/timerLogic';
-import { playBell, playCountdown, initAudio } from '../utils/audioManager';
+import { playBell, playCountdown, initAudio, startAudioKeepAlive, stopAudioKeepAlive } from '../utils/audioManager';
 import { saveSessionState, clearSessionState } from '../utils/storage';
 import { requestWakeLock, releaseWakeLock } from '../utils/wakeLock';
 import { buildSessionSnapshot } from '../utils/sessionSnapshot';
@@ -11,7 +11,7 @@ import { advanceIntervalState } from '../utils/timerTickMath';
 import { shouldPersistRunningSession } from '../utils/sessionPersistenceCadence';
 
 const RUNNING_PERSIST_MIN_INTERVAL_MS = 1000;
-const MIN_COARSE_TICK_MS = 100;
+const TICK_INTERVAL_MS = 500;
 
 function monotonicNow() {
   if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
@@ -26,38 +26,31 @@ function safeMs(value) {
   return parsed;
 }
 
-function normalizeTickIntervalMs(value) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
-  return Math.max(MIN_COARSE_TICK_MS, Math.floor(parsed));
-}
-
 export function useTimer(
   sessionMinutes,
   intervalSeconds,
   sessionMetadata = null,
-  tickIntervalMs = 0
 ) {
   const sessionDurationSec = sessionMinutes * 60;
-  const defaultIntervalSec = intervalSeconds;
 
   // Refs for values used inside tick to avoid stale closures when React re-renders
   const sessionDurationSecRef = useRef(sessionDurationSec);
-  const defaultIntervalSecRef = useRef(defaultIntervalSec);
+  const defaultIntervalSecRef = useRef(intervalSeconds);
   sessionDurationSecRef.current = sessionDurationSec;
-  defaultIntervalSecRef.current = defaultIntervalSec;
+  defaultIntervalSecRef.current = intervalSeconds;
 
-  // Timer state
   // Timer state
   const [status, setStatus] = useState('idle'); // idle | countdown | running | paused
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [intervalRemaining, setIntervalRemaining] = useState(defaultIntervalSec);
+  const [intervalRemaining, setIntervalRemaining] = useState(intervalSeconds);
   const [intervalCount, setIntervalCount] = useState(0);
   const [circleColor, setCircleColor] = useState('black');
   const [countdownNumber, setCountdownNumber] = useState(null);
-  const [currentIntervalDuration, setCurrentIntervalDuration] = useState(defaultIntervalSec);
+  const [currentIntervalDuration, setCurrentIntervalDuration] = useState(intervalSeconds);
   const [isQuickAdd, setIsQuickAdd] = useState(false);
   const [completedElapsedSeconds, setCompletedElapsedSeconds] = useState(0);
+
+  const isOvertime = elapsedSeconds >= sessionDurationSec;
 
   // Refs for monotonic runtime timing and wall-clock persistence
   const sessionStartWallRef = useRef(null);
@@ -67,19 +60,17 @@ export function useTimer(
   const sessionElapsedBeforeRunRef = useRef(0);
   const intervalElapsedBeforeRunRef = useRef(0);
 
-  const rafRef = useRef(null);
   const timeoutRef = useRef(null);
   const tickRef = useRef(null);
   const intervalCountRef = useRef(0);
   const circleColorRef = useRef('black');
-  const currentIntervalDurationRef = useRef(defaultIntervalSec);
+  const currentIntervalDurationRef = useRef(intervalSeconds);
   const isQuickAddRef = useRef(false);
   const statusRef = useRef('idle');
   const countdownTimeoutsRef = useRef([]);
   const countdownTokenRef = useRef(0);
   const sessionMetadataRef = useRef(sessionMetadata);
   const lastRunningPersistAtRef = useRef(0);
-  const tickIntervalMsRef = useRef(normalizeTickIntervalMs(tickIntervalMs));
 
   // Keep refs in sync
   useEffect(() => {
@@ -94,10 +85,6 @@ export function useTimer(
   useEffect(() => {
     sessionMetadataRef.current = sessionMetadata;
   }, [sessionMetadata]);
-  useEffect(() => {
-    tickIntervalMsRef.current = normalizeTickIntervalMs(tickIntervalMs);
-  }, [tickIntervalMs]);
-
   const clearCountdownTimeouts = useCallback(() => {
     countdownTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
     countdownTimeoutsRef.current = [];
@@ -146,7 +133,7 @@ export function useTimer(
       nowWall,
       sessionStartTime: sessionStartWallRef.current,
       sessionDuration: sessionDurationSec,
-      intervalDuration: defaultIntervalSec,
+      intervalDuration: intervalSeconds,
       currentIntervalStartTime: intervalStartWallRef.current,
       currentIntervalDuration: currentIntervalDurationRef.current,
       intervalCount: intervalCountRef.current,
@@ -160,13 +147,9 @@ export function useTimer(
       lastRunningPersistAtRef.current = nowWall;
     }
     return true;
-  }, [defaultIntervalSec, getIntervalElapsedMs, getSessionElapsedMs, sessionDurationSec]);
+  }, [intervalSeconds, getIntervalElapsedMs, getSessionElapsedMs, sessionDurationSec]);
 
   const stopTicking = useCallback(() => {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -175,18 +158,10 @@ export function useTimer(
 
   // Stable function that always calls the latest tick via ref
   const scheduleTick = useCallback(() => {
-    const delayMs = tickIntervalMsRef.current;
-    if (delayMs > 0) {
-      timeoutRef.current = setTimeout(() => {
-        timeoutRef.current = null;
-        if (tickRef.current) tickRef.current();
-      }, delayMs);
-      return;
-    }
-
-    rafRef.current = requestAnimationFrame(() => {
+    timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = null;
       if (tickRef.current) tickRef.current();
-    });
+    }, TICK_INTERVAL_MS);
   }, []);
 
   const tick = useCallback(() => {
@@ -200,17 +175,10 @@ export function useTimer(
       const elapsed = Math.floor(elapsedMs / 1000);
       setElapsedSeconds(elapsed);
 
-      // Check if session is over — read from ref to always use current value
-      if (elapsed >= sessionDurationSecRef.current) {
+      // Check if session has crossed into overtime
+      if (elapsed === sessionDurationSecRef.current && elapsed > 0) {
+        // We only play the bell once when crossing the exact boundary
         playBell();
-        setCompletedElapsedSeconds(elapsed);
-        stopTicking();
-        releaseWakeLock();
-        clearCountdownTimeouts();
-        setStatus('idle');
-        statusRef.current = 'idle';
-        clearSessionState();
-        return;
       }
 
       // Calculate interval remaining and process completions robustly if device wakes late.
@@ -263,7 +231,6 @@ export function useTimer(
       scheduleTick();
     }
   }, [
-    clearCountdownTimeouts,
     getIntervalElapsedMs,
     getSessionElapsedMs,
     persistSession,
@@ -293,13 +260,13 @@ export function useTimer(
 
     intervalCountRef.current = 1;
     circleColorRef.current = 'teal';
-    currentIntervalDurationRef.current = defaultIntervalSec;
+    currentIntervalDurationRef.current = intervalSeconds;
     isQuickAddRef.current = false;
 
     setIntervalCount(1);
     setCircleColor('teal');
-    setCurrentIntervalDuration(defaultIntervalSec);
-    setIntervalRemaining(defaultIntervalSec);
+    setCurrentIntervalDuration(intervalSeconds);
+    setIntervalRemaining(intervalSeconds);
     setElapsedSeconds(0);
     setIsQuickAdd(false);
     setCompletedElapsedSeconds(0);
@@ -308,9 +275,10 @@ export function useTimer(
     statusRef.current = 'running';
 
     requestWakeLock();
+    startAudioKeepAlive();
     startTicking();
     persistSession('running', { force: true });
-  }, [defaultIntervalSec, persistSession, startTicking]);
+  }, [intervalSeconds, persistSession, startTicking]);
 
   // Handle visibility change to immediately catch up if we fell behind
   useEffect(() => {
@@ -406,6 +374,7 @@ export function useTimer(
     setStatus('paused');
     statusRef.current = 'paused';
     stopTicking();
+    stopAudioKeepAlive();
     persistSession('paused', { force: true });
   }, [getIntervalElapsedMs, getSessionElapsedMs, persistSession, stopTicking]);
 
@@ -419,6 +388,7 @@ export function useTimer(
     setStatus('running');
     statusRef.current = 'running';
     requestWakeLock();
+    startAudioKeepAlive();
     startTicking();
     persistSession('running', { force: true });
   }, [persistSession, startTicking]);
@@ -427,6 +397,7 @@ export function useTimer(
     stopTicking();
     clearCountdownTimeouts();
     releaseWakeLock();
+    stopAudioKeepAlive();
   }, [clearCountdownTimeouts, stopTicking]);
 
   const reset = useCallback(() => {
@@ -442,21 +413,31 @@ export function useTimer(
 
     intervalCountRef.current = 0;
     circleColorRef.current = 'black';
-    currentIntervalDurationRef.current = defaultIntervalSec;
+    currentIntervalDurationRef.current = intervalSeconds;
     isQuickAddRef.current = false;
     lastRunningPersistAtRef.current = 0;
 
     setStatus('idle');
     statusRef.current = 'idle';
     setElapsedSeconds(0);
-    setIntervalRemaining(defaultIntervalSec);
+    setIntervalRemaining(intervalSeconds);
     setIntervalCount(0);
     setCircleColor('black');
     setCountdownNumber(null);
-    setCurrentIntervalDuration(defaultIntervalSec);
+    setCurrentIntervalDuration(intervalSeconds);
     setIsQuickAdd(false);
     setCompletedElapsedSeconds(0);
-  }, [defaultIntervalSec, stopTimers]);
+  }, [intervalSeconds, stopTimers]);
+
+  const finish = useCallback(() => {
+    if (statusRef.current === 'idle') return;
+    const finalElapsed = Math.floor(getSessionElapsedMs() / 1000);
+    setCompletedElapsedSeconds(finalElapsed);
+    stopTimers();
+    setStatus('idle');
+    statusRef.current = 'idle';
+    clearSessionState();
+  }, [getSessionElapsedMs, stopTimers]);
 
   const quickAdd = useCallback((seconds) => {
     if (statusRef.current !== 'running') return;
@@ -490,10 +471,8 @@ export function useTimer(
     const nowWall = Date.now();
     const resumeState = deriveResumedIntervalState(savedState, nowWall);
 
-    if (resumeState.elapsed >= savedState.sessionDuration) {
-      clearSessionState();
-      return false;
-    }
+    // Overtime means we no longer block resume based on elapsed time vs sessionDuration
+    // so we removed the return false block here.
 
     const persistedElapsedMs = safeMs(savedState.elapsedMs);
     const persistedIntervalElapsedMs = safeMs(savedState.intervalElapsedMs);
@@ -539,6 +518,7 @@ export function useTimer(
       setStatus('running');
       statusRef.current = 'running';
       requestWakeLock();
+      startAudioKeepAlive();
       startTicking();
       persistSession('running', { force: true });
     }
@@ -552,11 +532,12 @@ export function useTimer(
       stopTicking();
       clearCountdownTimeouts();
       releaseWakeLock();
+      stopAudioKeepAlive();
     };
   }, [clearCountdownTimeouts, stopTicking]);
 
-  const totalIntervals = defaultIntervalSec > 0
-    ? Math.ceil(sessionDurationSec / defaultIntervalSec)
+  const totalIntervals = intervalSeconds > 0
+    ? Math.ceil(sessionDurationSec / intervalSeconds)
     : 0;
 
   // Progress (0 to 1) for the interval circle
@@ -576,10 +557,12 @@ export function useTimer(
     isQuickAdd,
     completedElapsedSeconds,
     intervalProgress,
+    isOvertime,
     start,
     pause,
     resume,
     reset,
+    finish,
     quickAdd,
     resumeSession,
     persistSession,

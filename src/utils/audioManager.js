@@ -1,77 +1,99 @@
-// Audio manager - bell/countdown SFX plus lightweight procedural background loop.
-// Designed to coexist with other device audio while respecting browser gesture rules.
-
-import { loadAudioPreferences, saveAudioPreferences } from './storage';
-
 let audioContext = null;
 let bellBuffer = null;
 let initialized = false;
 
 let sfxGainNode = null;
-let bgmGainNode = null;
-
-let bgmSchedulerId = null;
-let bgmPatternIndex = 0;
-let bgmNextNoteTime = 0;
-let bgmPlaying = false;
-let bgmUnlocked = false;
 let visibilityListenerBound = false;
-const bgmActiveSources = new Set();
-const bgmListeners = new Set();
+let keepAliveIntervalId = null;
+// Voice Engine State
+const voiceBuffers = {};
 
-const BGM_LOOKAHEAD_SEC = 0.2;
-const BGM_SCHEDULER_MS = 80;
-const BGM_BPM = 132;
-const BGM_BEAT_SEC = 60 / BGM_BPM;
-const BGM_TARGET_GAIN = 0.11;
+function ensureAudioContext() {
+  if (initialized && audioContext) return true;
 
-const BGM_PATTERN = [
-  { note: 64, beats: 0.5, velocity: 0.92 },
-  { note: 67, beats: 0.5, velocity: 0.92 },
-  { note: 71, beats: 0.5, velocity: 1.0 },
-  { note: 67, beats: 0.5, velocity: 0.86 },
-  { note: 69, beats: 0.5, velocity: 0.94 },
-  { note: 72, beats: 0.5, velocity: 1.0 },
-  { note: 76, beats: 0.75, velocity: 0.95 },
-  { note: 74, beats: 0.25, velocity: 0.78 },
-  { note: 72, beats: 0.5, velocity: 0.95 },
-  { note: 69, beats: 0.5, velocity: 0.82 },
-  { note: 67, beats: 0.5, velocity: 0.76 },
-  { note: null, beats: 0.5, velocity: 0 },
-  { note: 64, beats: 0.5, velocity: 0.9 },
-  { note: 67, beats: 0.5, velocity: 0.9 },
-  { note: 71, beats: 0.5, velocity: 1.0 },
-  { note: 74, beats: 0.5, velocity: 0.95 },
-  { note: 72, beats: 0.75, velocity: 0.9 },
-  { note: 69, beats: 0.25, velocity: 0.72 },
-  { note: 67, beats: 0.5, velocity: 0.8 },
-  { note: 64, beats: 1.0, velocity: 0.75 },
-];
-
-function midiToFrequency(midi) {
-  return 440 * (2 ** ((midi - 69) / 12));
-}
-
-function readInitialBgmEnabled() {
   try {
-    const prefs = loadAudioPreferences();
-    return Boolean(prefs.bgmEnabled);
-  } catch {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    bellBuffer = generateBellBuffer(audioContext);
+
+    sfxGainNode = audioContext.createGain();
+    sfxGainNode.gain.value = 1;
+    sfxGainNode.connect(audioContext.destination);
+
+    initialized = true;
+
+    if (audioContext.state === 'suspended') {
+      audioContext.resume().catch(() => {});
+    }
+
     return true;
+  } catch (err) {
+    console.error('Audio init failed:', err);
+    return false;
   }
 }
 
-let bgmEnabled = readInitialBgmEnabled();
-
-function emitBgmState() {
-  const snapshot = getBackgroundMusicState();
-  bgmListeners.forEach((listener) => {
+/** Await AudioContext resume — critical on iOS where the context gets suspended. */
+async function ensureResumed() {
+  if (!audioContext) return false;
+  if (audioContext.state === 'suspended') {
     try {
-      listener(snapshot);
+      await audioContext.resume();
     } catch (err) {
-      console.error('BGM listener failed:', err);
+      console.warn('AudioContext resume failed:', err);
+      return false;
+    }
+  }
+  return audioContext.state === 'running';
+}
+
+function bindVisibilityHandling() {
+  if (visibilityListenerBound || typeof document === 'undefined') return;
+
+  document.addEventListener('visibilitychange', async () => {
+    if (!audioContext) return;
+    if (document.visibilityState === 'hidden') return;
+
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
     }
   });
+
+  visibilityListenerBound = true;
+}
+
+export function initAudio() {
+  const ready = ensureAudioContext();
+  if (ready) {
+    bindVisibilityHandling();
+    preloadVoices();
+  }
+  return ready;
+}
+
+async function preloadVoices() {
+  if (!audioContext) return;
+  const files = [
+    'start_warmup',
+    'warmup_complete',
+    'quarter_way',
+    'halfway',
+    'three_quarters',
+    'five_minutes',
+    'one_minute',
+    'workout_complete',
+  ];
+
+  await Promise.all(
+    files.map(async (name) => {
+      try {
+        const response = await fetch(`/audio/${name}.mp3`);
+        const arrayBuffer = await response.arrayBuffer();
+        voiceBuffers[name] = await audioContext.decodeAudioData(arrayBuffer);
+      } catch (err) {
+        console.warn(`Failed to preload voice: ${name}`, err);
+      }
+    })
+  );
 }
 
 function generateBellBuffer(ctx) {
@@ -114,237 +136,10 @@ function generateBeepBuffer(ctx, frequency, duration) {
   return buffer;
 }
 
-function stopActiveBgmSources() {
-  bgmActiveSources.forEach((source) => {
-    try {
-      source.stop();
-    } catch {
-      // no-op if already stopped
-    }
-  });
-  bgmActiveSources.clear();
-}
-
-function scheduleBgmStep(step, startTime) {
-  if (!audioContext || !bgmGainNode || step.note === null) return;
-
-  const duration = step.beats * BGM_BEAT_SEC;
-  const release = Math.min(0.06, duration * 0.3);
-  const stopTime = startTime + duration + release;
-
-  const leadOsc = audioContext.createOscillator();
-  const leadGain = audioContext.createGain();
-  leadOsc.type = 'square';
-  leadOsc.frequency.value = midiToFrequency(step.note);
-
-  const bassOsc = audioContext.createOscillator();
-  const bassGain = audioContext.createGain();
-  bassOsc.type = 'triangle';
-  bassOsc.frequency.value = midiToFrequency(step.note - 12);
-
-  const leadLevel = BGM_TARGET_GAIN * step.velocity;
-  const bassLevel = leadLevel * 0.48;
-
-  leadGain.gain.setValueAtTime(0.0001, startTime);
-  leadGain.gain.linearRampToValueAtTime(leadLevel, startTime + 0.012);
-  leadGain.gain.exponentialRampToValueAtTime(0.0001, stopTime);
-
-  bassGain.gain.setValueAtTime(0.0001, startTime);
-  bassGain.gain.linearRampToValueAtTime(bassLevel, startTime + 0.016);
-  bassGain.gain.exponentialRampToValueAtTime(0.0001, stopTime);
-
-  leadOsc.connect(leadGain);
-  bassOsc.connect(bassGain);
-  leadGain.connect(bgmGainNode);
-  bassGain.connect(bgmGainNode);
-
-  leadOsc.start(startTime);
-  bassOsc.start(startTime);
-  leadOsc.stop(stopTime);
-  bassOsc.stop(stopTime);
-
-  bgmActiveSources.add(leadOsc);
-  bgmActiveSources.add(bassOsc);
-
-  const clearSource = (source) => () => {
-    bgmActiveSources.delete(source);
-  };
-
-  leadOsc.onended = clearSource(leadOsc);
-  bassOsc.onended = clearSource(bassOsc);
-}
-
-function scheduleBgmAhead() {
-  if (!audioContext || !bgmPlaying || !bgmEnabled) return;
-
-  while (bgmNextNoteTime < audioContext.currentTime + BGM_LOOKAHEAD_SEC) {
-    const step = BGM_PATTERN[bgmPatternIndex % BGM_PATTERN.length];
-    scheduleBgmStep(step, bgmNextNoteTime);
-    bgmNextNoteTime += step.beats * BGM_BEAT_SEC;
-    bgmPatternIndex += 1;
-  }
-}
-
-function ensureAudioContext() {
-  if (initialized && audioContext) return true;
-
-  try {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    bellBuffer = generateBellBuffer(audioContext);
-
-    sfxGainNode = audioContext.createGain();
-    sfxGainNode.gain.value = 1;
-    sfxGainNode.connect(audioContext.destination);
-
-    bgmGainNode = audioContext.createGain();
-    bgmGainNode.gain.value = 0;
-    bgmGainNode.connect(audioContext.destination);
-
-    initialized = true;
-
-    if (audioContext.state === 'suspended') {
-      audioContext.resume();
-    }
-
-    return true;
-  } catch (err) {
-    console.error('Audio init failed:', err);
-    return false;
-  }
-}
-
-function bindVisibilityHandling() {
-  if (visibilityListenerBound || typeof document === 'undefined') return;
-
-  document.addEventListener('visibilitychange', async () => {
-    if (!audioContext) return;
-
-    if (document.visibilityState === 'hidden') {
-      stopBackgroundMusic();
-      // On mobile, we DO NOT suspend the context because resuming it reliably
-      // from a background state is often blocked by browser policy.
-      // We just stop the oscillators (which stopBackgroundMusic does).
-      return;
-    }
-
-    if (audioContext.state === 'suspended') {
-      await audioContext.resume();
-    }
-    if (bgmEnabled && bgmUnlocked) {
-      startBackgroundMusic();
-    }
-  });
-
-  visibilityListenerBound = true;
-}
-
-export function initAudio() {
-  return ensureAudioContext();
-}
-
-export function initBackgroundMusic() {
-  const ready = ensureAudioContext();
-  if (!ready) return false;
-  bindVisibilityHandling();
-  return true;
-}
-
-export async function startBackgroundMusic() {
-  if (!initBackgroundMusic()) return false;
-
-  bgmUnlocked = true;
-
-  if (!bgmEnabled) {
-    emitBgmState();
-    return false;
-  }
-
-  if (audioContext.state === 'suspended') {
-    await audioContext.resume();
-  }
-
-  if (bgmPlaying) {
-    emitBgmState();
-    return true;
-  }
-
-  bgmPlaying = true;
-  bgmPatternIndex = 0;
-  bgmNextNoteTime = audioContext.currentTime + 0.03;
-
-  if (bgmGainNode) {
-    bgmGainNode.gain.setTargetAtTime(BGM_TARGET_GAIN, audioContext.currentTime, 0.08);
-  }
-
-  scheduleBgmAhead();
-  bgmSchedulerId = window.setInterval(scheduleBgmAhead, BGM_SCHEDULER_MS);
-  emitBgmState();
-  return true;
-}
-
-export function stopBackgroundMusic() {
-  if (bgmSchedulerId !== null) {
-    clearInterval(bgmSchedulerId);
-    bgmSchedulerId = null;
-  }
-
-  if (audioContext && bgmGainNode) {
-    const t = audioContext.currentTime;
-    bgmGainNode.gain.cancelScheduledValues(t);
-    bgmGainNode.gain.setTargetAtTime(0.0001, t, 0.04);
-  }
-
-  stopActiveBgmSources();
-  bgmPlaying = false;
-  emitBgmState();
-}
-
-export function setBackgroundMusicEnabled(enabled) {
-  bgmEnabled = Boolean(enabled);
-  saveAudioPreferences({ bgmEnabled });
-
-  if (!bgmEnabled) {
-    stopBackgroundMusic();
-    return getBackgroundMusicState();
-  }
-
-  // Enabling via UI click should immediately unlock/start if browser permits.
-  startBackgroundMusic();
-
-  return getBackgroundMusicState();
-}
-
-export function toggleBackgroundMusic() {
-  return setBackgroundMusicEnabled(!bgmEnabled);
-}
-
-export function getBackgroundMusicState() {
-  return {
-    enabled: bgmEnabled,
-    playing: bgmPlaying,
-    unlocked: bgmUnlocked,
-  };
-}
-
-export function subscribeBackgroundMusic(listener) {
-  if (typeof listener !== 'function') {
-    return () => { };
-  }
-
-  bgmListeners.add(listener);
-  listener(getBackgroundMusicState());
-
-  return () => {
-    bgmListeners.delete(listener);
-  };
-}
-
-export function playBell() {
+export async function playBell() {
   if (!audioContext || !bellBuffer || !sfxGainNode) return;
 
-  if (audioContext.state === 'suspended') {
-    audioContext.resume();
-  }
+  await ensureResumed();
 
   const source = audioContext.createBufferSource();
   const gainNode = audioContext.createGain();
@@ -409,6 +204,94 @@ export async function playCountdown(onComplete) {
   // Schedule callback exactly when the last beep finishes
   // We use setTimeout here but the caller (useTimer) has a robust fallback loop now
   setTimeout(safeComplete, 3400);
+}
+
+/**
+ * Request audio ducking via the Audio Session API.
+ * Sets type to "transient" which tells iOS to lower other audio (e.g. Spotify).
+ * Returns the previous type so it can be restored after playback.
+ */
+function requestDucking() {
+  if (!navigator.audioSession) return null;
+  try {
+    const prev = navigator.audioSession.type;
+    navigator.audioSession.type = 'transient';
+    return prev;
+  } catch {
+    return null;
+  }
+}
+
+function releaseDucking(prevType) {
+  if (!navigator.audioSession || prevType == null) return;
+  try {
+    navigator.audioSession.type = prevType;
+  } catch {
+    // ignore
+  }
+}
+
+export async function playSpeechAnnouncement(key) {
+  if (!audioContext || !sfxGainNode) return;
+
+  await ensureResumed();
+
+  const buffer = voiceBuffers[key];
+  if (!buffer) {
+    console.warn('Voice buffer not found for:', key);
+    return;
+  }
+
+  const prevSessionType = requestDucking();
+
+  try {
+    const source = audioContext.createBufferSource();
+    const gainNode = audioContext.createGain();
+    gainNode.gain.value = 1.0;
+    source.buffer = buffer;
+    source.connect(gainNode);
+    gainNode.connect(sfxGainNode);
+    source.onended = () => releaseDucking(prevSessionType);
+    source.start(0);
+  } catch (err) {
+    console.error('Speech playback failed:', err);
+    releaseDucking(prevSessionType);
+  }
+}
+
+/**
+ * Play a near-silent buffer to keep the AudioContext alive on iOS.
+ * iOS suspends inactive AudioContexts after ~15-30s of silence.
+ */
+function playKeepAlive() {
+  if (!audioContext || audioContext.state === 'closed') return;
+  if (audioContext.state === 'suspended') {
+    audioContext.resume().catch(() => {});
+  }
+  try {
+    const buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
+    const source = audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContext.destination);
+    source.start(0);
+  } catch {
+    // Silently ignore — non-critical
+  }
+}
+
+/** Start keepalive loop. Call when a timer session starts. */
+export function startAudioKeepAlive() {
+  stopAudioKeepAlive();
+  playKeepAlive();
+  keepAliveIntervalId = setInterval(playKeepAlive, 15_000);
+}
+
+/** Stop keepalive loop. Call when a timer session ends. */
+export function stopAudioKeepAlive() {
+  if (keepAliveIntervalId !== null) {
+    clearInterval(keepAliveIntervalId);
+    keepAliveIntervalId = null;
+  }
 }
 
 export function isInitialized() {

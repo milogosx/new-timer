@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { formatTime } from '../utils/timerLogic';
-import AmbientEcgPulse from './AmbientEcgPulse';
 import './TimerCircle.css';
 
 const CIRCLE_COLORS = {
@@ -9,37 +8,27 @@ const CIRCLE_COLORS = {
   rest: '#00897B',  // Rest: Teal
 };
 
+const MODE_CLASS_MAP = { rest: 'mode-rest', idle: 'mode-idle' };
+
 function TimerCircle({
   remainingSeconds,
   circleColor,
   progress,
   countdownNumber,
   timerMode, // 'idle' | 'running' | 'rest'
-  suppressAmbientEffects = false,
 }) {
   const bgColor = CIRCLE_COLORS[circleColor] || CIRCLE_COLORS.black;
-  const textColor = '#FFFFFF';
 
   // SVG circle progress
   const radius = 140;
   const circumference = 2 * Math.PI * radius;
-  // Fallback to 0 if progress is NaN
   const safeProgress = Number.isFinite(progress) ? Math.max(0, Math.min(1, progress)) : 0;
   const strokeDashoffset = circumference * (1 - safeProgress);
 
-  // Mode class for ring color
-  const modeClass = timerMode === 'rest' ? 'mode-rest' : timerMode === 'idle' ? 'mode-idle' : 'mode-running';
-  const wrapperClass = `timer-circle-wrapper ${modeClass}${suppressAmbientEffects ? ' effects-static' : ''}`;
+  const modeClass = MODE_CLASS_MAP[timerMode] || 'mode-running';
 
   return (
-    <div className={wrapperClass}>
-      {/* ECG pulse behind the timer */}
-      {!suppressAmbientEffects && (
-        <div className="timer-ecg-bg">
-          <AmbientEcgPulse />
-        </div>
-      )}
-
+    <div className={`timer-circle-wrapper ${modeClass}`}>
       <div className="timer-circle-border">
         <svg className="progress-ring" viewBox="0 0 320 320">
           {/* Background track */}
@@ -73,13 +62,13 @@ function TimerCircle({
           style={{ backgroundColor: bgColor }}
         >
           {countdownNumber !== null ? (
-            <span className="countdown-number" style={{ color: textColor }}>
+            <span className="countdown-number" style={{ color: '#FFFFFF' }}>
               {countdownNumber}
             </span>
           ) : (
             <span
               className="timer-display"
-              style={{ color: textColor }}
+              style={{ color: '#FFFFFF' }}
             >
               {formatTime(remainingSeconds || 0)}
             </span>

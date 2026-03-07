@@ -5,7 +5,7 @@ import WorkoutLibrary from './components/WorkoutLibrary';
 import WorkoutEditor from './components/WorkoutEditor';
 import WarmupEditor from './components/WarmupEditor';
 import CardioEditor from './components/CardioEditor';
-import { initBackgroundMusic, startBackgroundMusic } from './utils/audioManager';
+import { initAudio } from './utils/audioManager';
 import { bindCloudSyncLifecycle, bootstrapCloudProfile } from './utils/cloudProfileSync';
 import { SCREENS, EDITOR_RETURN } from './constants/appState';
 import './App.css';
@@ -33,7 +33,6 @@ function App() {
     sessionMinutes: 60,
     intervalSeconds: 30,
     workout: null,
-    batterySaverMode: false,
   });
   const [editingWorkout, setEditingWorkout] = useState(null);
   const [editingWarmup, setEditingWarmup] = useState(null);
@@ -53,14 +52,12 @@ function App() {
   }, []);
 
   useEffect(() => {
-    initBackgroundMusic();
-
     let hasHandledFirstInteraction = false;
 
     const handleFirstInteraction = () => {
       if (hasHandledFirstInteraction) return;
       hasHandledFirstInteraction = true;
-      startBackgroundMusic();
+      initAudio();
       removeListeners();
     };
 
@@ -94,12 +91,11 @@ function App() {
     };
   }, []);
 
-  function handleStartTimer(sessionMinutes, intervalSeconds, workout, options = {}) {
+  function handleStartTimer(sessionMinutes, intervalSeconds, workout) {
     setTimerConfig({
       sessionMinutes,
       intervalSeconds,
       workout,
-      batterySaverMode: Boolean(options.batterySaverMode),
     });
     setScreen(SCREENS.TIMER);
   }
@@ -132,11 +128,7 @@ function App() {
     setScreen(SCREENS.EDITOR);
   }
 
-  function handleEditorSave() {
-    setScreen(editorReturnTo);
-  }
-
-  function handleEditorCancel() {
+  function handleEditorDone() {
     setScreen(editorReturnTo);
   }
 
@@ -150,14 +142,6 @@ function App() {
     setScreen(SCREENS.WARMUP_EDITOR);
   }
 
-  function handleWarmupEditorSave() {
-    setScreen(SCREENS.LIBRARY);
-  }
-
-  function handleWarmupEditorCancel() {
-    setScreen(SCREENS.LIBRARY);
-  }
-
   function handleEditCardio(cardio) {
     setEditingCardio(cardio);
     setScreen(SCREENS.CARDIO_EDITOR);
@@ -168,11 +152,7 @@ function App() {
     setScreen(SCREENS.CARDIO_EDITOR);
   }
 
-  function handleCardioEditorSave() {
-    setScreen(SCREENS.LIBRARY);
-  }
-
-  function handleCardioEditorCancel() {
+  function handleReturnToLibrary() {
     setScreen(SCREENS.LIBRARY);
   }
 
@@ -197,7 +177,6 @@ function App() {
           sessionMinutes={timerConfig.sessionMinutes}
           intervalSeconds={timerConfig.intervalSeconds}
           workout={timerConfig.workout}
-          batterySaverMode={timerConfig.batterySaverMode}
           onBack={handleBackToHome}
         />
       )}
@@ -216,22 +195,22 @@ function App() {
       {screen === SCREENS.EDITOR && (
         <WorkoutEditor
           workout={editingWorkout}
-          onSave={handleEditorSave}
-          onCancel={handleEditorCancel}
+          onSave={handleEditorDone}
+          onCancel={handleEditorDone}
         />
       )}
       {screen === SCREENS.WARMUP_EDITOR && (
         <WarmupEditor
           warmup={editingWarmup}
-          onSave={handleWarmupEditorSave}
-          onCancel={handleWarmupEditorCancel}
+          onSave={handleReturnToLibrary}
+          onCancel={handleReturnToLibrary}
         />
       )}
       {screen === SCREENS.CARDIO_EDITOR && (
         <CardioEditor
           cardio={editingCardio}
-          onSave={handleCardioEditorSave}
-          onCancel={handleCardioEditorCancel}
+          onSave={handleReturnToLibrary}
+          onCancel={handleReturnToLibrary}
         />
       )}
     </div>

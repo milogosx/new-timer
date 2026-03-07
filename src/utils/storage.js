@@ -2,16 +2,7 @@ const ACTIVE_SESSION_KEY = 'eliteTimer_activeSession';
 const SETTINGS_KEY = 'eliteTimer_settings';
 const AUDIO_PREFS_KEY = 'eliteTimer_audioPrefs';
 const DEFAULT_AUDIO_PREFS = { bgmEnabled: false };
-const DEFAULT_SETTINGS = { sessionMinutes: 60, intervalSeconds: 30, batterySaverMode: false };
-
-function detectBatterySaverDefault() {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return DEFAULT_SETTINGS.batterySaverMode;
-  }
-
-  return window.matchMedia('(pointer: coarse)').matches
-    || window.matchMedia('(max-width: 768px)').matches;
-}
+const DEFAULT_SETTINGS = { sessionMinutes: 60, intervalSeconds: 30 };
 
 function normalizePositiveNumber(value, fallback) {
   const parsed = Number(value);
@@ -22,18 +13,11 @@ function normalizePositiveNumber(value, fallback) {
 }
 
 function normalizeSettings(settings) {
-  const defaults = {
-    ...DEFAULT_SETTINGS,
-    batterySaverMode: detectBatterySaverDefault(),
-  };
   const source = settings && typeof settings === 'object' ? settings : {};
 
   return {
-    sessionMinutes: normalizePositiveNumber(source.sessionMinutes, defaults.sessionMinutes),
-    intervalSeconds: normalizePositiveNumber(source.intervalSeconds, defaults.intervalSeconds),
-    batterySaverMode: typeof source.batterySaverMode === 'boolean'
-      ? source.batterySaverMode
-      : defaults.batterySaverMode,
+    sessionMinutes: normalizePositiveNumber(source.sessionMinutes, DEFAULT_SETTINGS.sessionMinutes),
+    intervalSeconds: normalizePositiveNumber(source.intervalSeconds, DEFAULT_SETTINGS.intervalSeconds),
   };
 }
 

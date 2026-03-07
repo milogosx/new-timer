@@ -78,15 +78,21 @@ export async function requestWakeLock() {
   keepAwakeRequested = true;
   bindVisibilityListener();
 
+  // Use both strategies simultaneously for maximum reliability on iOS PWA.
+  // Native Wake Lock can be silently revoked; NoSleep provides a safety net.
+  let acquired = false;
+
   if (hasNativeWakeLock()) {
-    const nativeAcquired = await requestNativeWakeLock();
-    if (nativeAcquired) {
-      disableNoSleepFallback();
-      return true;
-    }
+    acquired = await requestNativeWakeLock();
   }
 
-  return requestNoSleepFallback();
+  // Also enable NoSleep.js as a fallback layer — it uses a silent video
+  // loop which iOS recognizes as media playback, keeping the screen on.
+  if (hasNoSleepFallback() && !noSleepEnabled) {
+    await requestNoSleepFallback();
+  }
+
+  return acquired || noSleepEnabled;
 }
 
 function handleWakeLockRelease() {

@@ -455,12 +455,6 @@ input[type="number"] {
   border: 3px solid #000000;
 }
 
-/* Light theme — session progress */
-[data-theme="light"] .session-progress-fill {
-  background: var(--pink);
-  box-shadow: none;
-}
-
 /* Light theme — complete overlay */
 [data-theme="light"] .complete-box {
   background: var(--cream);

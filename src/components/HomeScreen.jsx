@@ -1,10 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { loadSettings, saveSettings } from '../utils/storage';
 import { loadWorkouts, sortWorkouts } from '../utils/workoutStorage';
-import {
-  toggleBackgroundMusic,
-} from '../utils/audioManager';
-import { useBackgroundMusicState } from '../hooks/useBackgroundMusicState';
 import FireParticles from './FireParticles';
 import ElectricArc from './ElectricArc';
 import AmbientEcgPulse from './AmbientEcgPulse';
@@ -23,11 +19,9 @@ const MAX_VISIBLE_WORKOUTS = 4;
 export default function HomeScreen({ onStartTimer, onManageWorkouts, onCreateWorkout, theme, onToggleTheme }) {
   const [sessionMinutes, setSessionMinutes] = useState(() => String(loadSettings().sessionMinutes));
   const [intervalSeconds, setIntervalSeconds] = useState(() => String(loadSettings().intervalSeconds));
-  const [batterySaverMode, setBatterySaverMode] = useState(() => Boolean(loadSettings().batterySaverMode));
   const [workouts] = useState(() => sortWorkouts(loadWorkouts()));
   const [showAllWorkouts, setShowAllWorkouts] = useState(false);
   const [isGlitching, setIsGlitching] = useState(false);
-  const bgmState = useBackgroundMusicState();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const glitchTimerRef = useRef(null);
   const glitchResetTimerRef = useRef(null);
@@ -57,13 +51,12 @@ export default function HomeScreen({ onStartTimer, onManageWorkouts, onCreateWor
     };
   }, []);
 
-  function getSanitizedSessionSettings(nextBatterySaverMode = batterySaverMode) {
+  function getSanitizedSessionSettings() {
     const mins = Math.max(1, Math.min(180, parseInt(sessionMinutes) || 60));
     const secs = Math.max(5, Math.min(600, parseInt(intervalSeconds) || 30));
     return {
       sessionMinutes: mins,
       intervalSeconds: secs,
-      batterySaverMode: nextBatterySaverMode,
     };
   }
 
@@ -75,7 +68,6 @@ export default function HomeScreen({ onStartTimer, onManageWorkouts, onCreateWor
       nextSettings.sessionMinutes,
       nextSettings.intervalSeconds,
       workout,
-      { batterySaverMode: nextSettings.batterySaverMode }
     );
   }
 
@@ -87,16 +79,7 @@ export default function HomeScreen({ onStartTimer, onManageWorkouts, onCreateWor
       nextSettings.sessionMinutes,
       nextSettings.intervalSeconds,
       null,
-      { batterySaverMode: nextSettings.batterySaverMode }
     );
-  }
-
-  function handleToggleBatterySaver() {
-    setBatterySaverMode((previous) => {
-      const next = !previous;
-      saveSettings(getSanitizedSessionSettings(next));
-      return next;
-    });
   }
 
   const visibleWorkouts = showAllWorkouts ? workouts : workouts.slice(0, MAX_VISIBLE_WORKOUTS);
@@ -241,45 +224,10 @@ export default function HomeScreen({ onStartTimer, onManageWorkouts, onCreateWor
                   </svg>
                 )}
               </button>
-
-              <div className="settings-switch-group">
-                <span className="settings-switch-label">BATTERY SAVER</span>
-                <button
-                  className={`settings-switch-btn ${batterySaverMode ? 'is-on' : 'is-off'}`}
-                  onClick={handleToggleBatterySaver}
-                  type="button"
-                  title={batterySaverMode ? 'Battery Saver On' : 'Battery Saver Off'}
-                >
-                  {batterySaverMode ? 'ON' : 'OFF'}
-                </button>
-              </div>
             </div>
           )}
         </div>
       </div>
-
-      {/* Floating music button — bottom right */}
-      <button
-        className={`home-music-fab ${bgmState.enabled ? 'is-on' : 'is-off'}`}
-        onClick={() => toggleBackgroundMusic()}
-        type="button"
-        title={bgmState.enabled ? 'Music On' : 'Music Off'}
-      >
-        {bgmState.enabled ? (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-          </svg>
-        ) : (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-            <line x1="23" y1="9" x2="17" y2="15" />
-            <line x1="17" y1="9" x2="23" y2="15" />
-          </svg>
-        )}
-      </button>
-
     </div>
   );
 }
