@@ -72,48 +72,47 @@ export default function TimerScreen({
   const isWarmupPhase = timer.elapsedSeconds < WARMUP_DURATION_SEC && timer.elapsedSeconds < (sessionMinutes * 60);
   const phaseLabel = isWarmupPhase ? 'WARM UP' : 'WORKOUT';
 
-  const lastAnnouncedSecRef = useRef(-1);
+  const announcedSetRef = useRef(new Set());
 
-  // Handle Speech Announcements
+  // Reset announced milestones when a new session begins
+  useEffect(() => {
+    if (timer.status === 'countdown' || timer.status === 'idle') {
+      announcedSetRef.current.clear();
+    }
+  }, [timer.status]);
+
+  // Handle Speech Announcements — uses threshold-crossing (>=) instead of exact-second
+  // matching (===) so that announcements still fire even when setTimeout is throttled
+  // on iOS and the tick jumps past the target second.
   useEffect(() => {
     if (timer.status !== 'running') return;
 
     const s = Math.floor(timer.elapsedSeconds);
-    if (s === lastAnnouncedSecRef.current) return;
-
     const warmupS = WARMUP_DURATION_SEC;
     const totalS = sessionMinutes * 60;
+    const announced = announcedSetRef.current;
 
-    let announced = false;
+    // Build ordered milestone list — checked first-to-last so the earliest
+    // un-announced milestone fires first (only one per tick to avoid stacking).
+    const milestones = [
+      { key: 'start_warmup', at: 1 },
+      { key: 'warmup_complete', at: warmupS, guard: totalS > warmupS },
+      { key: 'quarter_way', at: Math.floor(totalS * 0.25), guard: Math.floor(totalS * 0.25) > warmupS },
+      { key: 'halfway', at: Math.floor(totalS / 2), guard: Math.floor(totalS / 2) > warmupS },
+      { key: 'three_quarters', at: Math.floor(totalS * 0.75), guard: Math.floor(totalS * 0.75) > warmupS },
+      { key: 'five_minutes', at: totalS - 300, guard: totalS - 300 > warmupS },
+      { key: 'one_minute', at: totalS - 60, guard: totalS - 60 > warmupS },
+      { key: 'workout_complete', at: totalS, guard: totalS > 0 },
+    ];
 
-    if (s === 1) {
-      playSpeechAnnouncement('start_warmup');
-      announced = true;
-    } else if (s === warmupS && totalS > warmupS) {
-      playSpeechAnnouncement('warmup_complete');
-      announced = true;
-    } else if (s === Math.floor(totalS * 0.25) && s > warmupS) {
-      playSpeechAnnouncement('quarter_way');
-      announced = true;
-    } else if (s === Math.floor(totalS / 2) && s > warmupS) {
-      playSpeechAnnouncement('halfway');
-      announced = true;
-    } else if (s === Math.floor(totalS * 0.75) && s > warmupS) {
-      playSpeechAnnouncement('three_quarters');
-      announced = true;
-    } else if (s === totalS - 300 && s > warmupS) { // 5 minutes remaining
-      playSpeechAnnouncement('five_minutes');
-      announced = true;
-    } else if (s === totalS - 60 && s > warmupS) { // 1 minute remaining
-      playSpeechAnnouncement('one_minute');
-      announced = true;
-    } else if (s === totalS && s > 0) {
-      playSpeechAnnouncement('workout_complete');
-      announced = true;
-    }
-
-    if (announced) {
-      lastAnnouncedSecRef.current = s;
+    for (const m of milestones) {
+      if (announced.has(m.key)) continue;
+      if (m.guard === false) continue;
+      if (s >= m.at) {
+        announced.add(m.key);
+        playSpeechAnnouncement(m.key);
+        break; // one announcement per tick to avoid stacking audio
+      }
     }
   }, [timer.status, timer.elapsedSeconds, sessionMinutes]);
 

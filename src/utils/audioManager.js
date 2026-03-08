@@ -32,10 +32,14 @@ function ensureAudioContext() {
   }
 }
 
-/** Await AudioContext resume — critical on iOS where the context gets suspended. */
+/**
+ * Await AudioContext resume — critical on iOS where the context gets suspended.
+ * iOS also has an 'interrupted' state (triggered by phone calls, Siri, etc.)
+ * that requires resume() to recover from.
+ */
 async function ensureResumed() {
   if (!audioContext) return false;
-  if (audioContext.state === 'suspended') {
+  if (audioContext.state !== 'running') {
     try {
       await audioContext.resume();
     } catch (err) {
@@ -147,6 +151,10 @@ export async function playBell() {
   source.buffer = bellBuffer;
   source.connect(gainNode);
   gainNode.connect(sfxGainNode);
+  source.onended = () => {
+    try { source.disconnect(); } catch {}
+    try { gainNode.disconnect(); } catch {}
+  };
   source.start(0);
 
   // Short vibration pulse for haptic feedback
@@ -251,7 +259,11 @@ export async function playSpeechAnnouncement(key) {
     source.buffer = buffer;
     source.connect(gainNode);
     gainNode.connect(sfxGainNode);
-    source.onended = () => releaseDucking(prevSessionType);
+    source.onended = () => {
+      try { source.disconnect(); } catch {}
+      try { gainNode.disconnect(); } catch {}
+      releaseDucking(prevSessionType);
+    };
     source.start(0);
   } catch (err) {
     console.error('Speech playback failed:', err);
@@ -262,10 +274,11 @@ export async function playSpeechAnnouncement(key) {
 /**
  * Play a near-silent buffer to keep the AudioContext alive on iOS.
  * iOS suspends inactive AudioContexts after ~15-30s of silence.
+ * Also handles 'interrupted' state which iOS enters after phone calls, Siri, etc.
  */
 function playKeepAlive() {
   if (!audioContext || audioContext.state === 'closed') return;
-  if (audioContext.state === 'suspended') {
+  if (audioContext.state !== 'running') {
     audioContext.resume().catch(() => {});
   }
   try {
@@ -279,19 +292,60 @@ function playKeepAlive() {
   }
 }
 
-/** Start keepalive loop. Call when a timer session starts. */
+let keepAliveActive = false;
+let lastKeepAliveAt = 0;
+
+/**
+ * Start keepalive loop. Call when a timer session starts.
+ * Uses setInterval + a visibility-change watchdog. iOS can silently kill
+ * setInterval when backgrounded; the watchdog detects this and restarts it
+ * whenever the app returns to foreground.
+ */
 export function startAudioKeepAlive() {
   stopAudioKeepAlive();
+  keepAliveActive = true;
+  lastKeepAliveAt = Date.now();
   playKeepAlive();
-  keepAliveIntervalId = setInterval(playKeepAlive, 15_000);
+  keepAliveIntervalId = setInterval(() => {
+    lastKeepAliveAt = Date.now();
+    playKeepAlive();
+  }, 15_000);
 }
 
 /** Stop keepalive loop. Call when a timer session ends. */
 export function stopAudioKeepAlive() {
+  keepAliveActive = false;
   if (keepAliveIntervalId !== null) {
     clearInterval(keepAliveIntervalId);
     keepAliveIntervalId = null;
   }
+}
+
+/**
+ * Watchdog: when app returns to foreground, check if the keepalive interval
+ * is still alive. If it stopped (gap > 20s), restart it.
+ */
+function keepAliveWatchdog() {
+  if (!keepAliveActive) return;
+  const gap = Date.now() - lastKeepAliveAt;
+  if (gap > 20_000) {
+    // setInterval was killed — restart
+    if (keepAliveIntervalId !== null) clearInterval(keepAliveIntervalId);
+    lastKeepAliveAt = Date.now();
+    playKeepAlive();
+    keepAliveIntervalId = setInterval(() => {
+      lastKeepAliveAt = Date.now();
+      playKeepAlive();
+    }, 15_000);
+  }
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      keepAliveWatchdog();
+    }
+  });
 }
 
 export function isInitialized() {

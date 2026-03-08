@@ -71,6 +71,7 @@ export function useTimer(
   const countdownTokenRef = useRef(0);
   const sessionMetadataRef = useRef(sessionMetadata);
   const lastRunningPersistAtRef = useRef(0);
+  const overtimeBellPlayedRef = useRef(false);
 
   // Keep refs in sync
   useEffect(() => {
@@ -175,9 +176,9 @@ export function useTimer(
       const elapsed = Math.floor(elapsedMs / 1000);
       setElapsedSeconds(elapsed);
 
-      // Check if session has crossed into overtime
-      if (elapsed === sessionDurationSecRef.current && elapsed > 0) {
-        // We only play the bell once when crossing the exact boundary
+      // Check if session has crossed into overtime (use >= so throttled ticks can't skip it)
+      if (!overtimeBellPlayedRef.current && elapsed >= sessionDurationSecRef.current && elapsed > 0) {
+        overtimeBellPlayedRef.current = true;
         playBell();
       }
 
@@ -262,6 +263,7 @@ export function useTimer(
     circleColorRef.current = 'teal';
     currentIntervalDurationRef.current = intervalSeconds;
     isQuickAddRef.current = false;
+    overtimeBellPlayedRef.current = false;
 
     setIntervalCount(1);
     setCircleColor('teal');
@@ -416,6 +418,7 @@ export function useTimer(
     currentIntervalDurationRef.current = intervalSeconds;
     isQuickAddRef.current = false;
     lastRunningPersistAtRef.current = 0;
+    overtimeBellPlayedRef.current = false;
 
     setStatus('idle');
     statusRef.current = 'idle';
