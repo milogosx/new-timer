@@ -1,7 +1,7 @@
 # Elite Recomposition Timer
 
 Mobile-first workout timer app built with React + Vite.  
-It is client-first, with Netlify-backed profile sync for workouts/warm-ups/cardios and local fallback for session state, theme, and audio preferences.
+It is client-first, with Netlify-backed profile sync for workouts/warm-ups/cardios and local fallback for session state and theme.
 
 ## Purpose
 
@@ -9,7 +9,6 @@ It is client-first, with Netlify-backed profile sync for workouts/warm-ups/cardi
 - Attach reusable warm-up and cardio routines to workouts.
 - Track per-exercise/per-set completion during a session.
 - Resume interrupted active sessions from local state.
-- Enable Battery Saver mode to reduce timer-screen animation/render cost during active sessions.
 - Persist workout-library edits as your default profile across devices via Netlify Functions + Blobs.
 
 ## Local Setup
@@ -40,11 +39,12 @@ npm run preview
 
 First 30-60 minutes:
 
-1. Read `/Users/camiloperezsetright/Projects/new-timer/docs/architecture-map.md` for module boundaries and data flow.
-2. Read `/Users/camiloperezsetright/Projects/new-timer/docs/invariants.md` for must-not-break behavior.
-3. Read `/Users/camiloperezsetright/Projects/new-timer/docs/decision-log.md` for why key choices were made.
-4. Read `/Users/camiloperezsetright/Projects/new-timer/docs/risk-register.md` for open risks and mitigation direction.
-5. Run:
+1. Read `/Users/camiloperezsetright/Projects/new-timer/docs/current-state-handoff.md` for the latest implementation status and next-step entry point.
+2. Read `/Users/camiloperezsetright/Projects/new-timer/docs/architecture-map.md` for module boundaries and data flow.
+3. Read `/Users/camiloperezsetright/Projects/new-timer/docs/invariants.md` for must-not-break behavior.
+4. Read `/Users/camiloperezsetright/Projects/new-timer/docs/decision-log.md` for why key choices were made.
+5. Read `/Users/camiloperezsetright/Projects/new-timer/docs/risk-register.md` for open risks and mitigation direction.
+6. Run:
    - `npm run lint`
    - `npm test`
    - `npm run build`
@@ -64,17 +64,17 @@ Entry points:
 Primary layers:
 
 - `src/components/*`: screen and UI components.
-- `src/hooks/useTimer.js`: core timer state machine (countdown/running/paused/resume).
-  - supports configurable tick cadence (RAF default, coarse interval in battery-saver mode)
-- `src/hooks/useBackgroundMusicState.js`: shared BGM state subscription for Home/Timer screens.
-- `src/utils/storage.js`: session/settings/audio preference persistence.
-- `src/utils/workoutStorage.js`: workouts/warm-ups/cardio CRUD + schema migration.
+- `src/hooks/useTimer.js`: core timer state machine (countdown/running/paused/resume) with session persistence, wake lock, and audio keepalive integration.
+- `src/utils/storage.js`: session and settings persistence.
+- `src/utils/workoutStorage.js`: workouts/warm-ups/cardio CRUD, schema migration, and screen-facing profile read models.
 - `src/utils/cloudProfileSync.js`: boot-time profile hydrate + write-through cloud sync for workout entities.
 - `src/utils/sessionSnapshot.js`: pure session payload construction for persistence.
+- `src/utils/sessionResumePolicy.js`: saved-session compatibility, persisted workout identity metadata, and checklist-restore policy.
 - `src/utils/timerTickMath.js`: pure timer interval fast-forward math.
+- `src/utils/timerPhase.js`: fixed session-phase and speech-announcement timing policy.
 - `src/utils/exerciseProgress.js`: checklist progress normalization/toggle helpers.
 - `src/utils/exerciseSanitizer.js`: shared editor save-time exercise normalization.
-- `src/utils/audioManager.js`: bell/countdown SFX + procedural background music.
+- `src/utils/audioManager.js`: bell/countdown SFX, speech announcements, and audio keepalive handling.
 - `src/utils/wakeLock.js`: Wake Lock integration with iPhone-safe `nosleep.js` fallback.
 - `src/constants/appState.js`: app screen and editor-return constants.
 - `netlify/functions/profile-read.js`: reads persisted workout profile.
@@ -85,6 +85,7 @@ Primary layers:
 - App shell state (`screen`, theme, edit context): `src/App.jsx`
 - Timer runtime state: `src/hooks/useTimer.js`
 - Exercise checklist progress for current session: `src/components/TimerScreen.jsx`
+  - persisted workout identity metadata and checklist restore policy are centralized in `src/utils/sessionResumePolicy.js`
 - Workout/warm-up/cardio canonical profile: Netlify Blobs via `netlify/functions/*` + local cache in `src/utils/workoutStorage.js`
 
 ## Local Storage Keys
@@ -93,15 +94,12 @@ Theme:
 
 - `er-timer-theme`
 
-Session/settings/audio:
+Session/settings:
 
 - `eliteTimer_activeSession`
 - `eliteTimer_settings`
   - `sessionMinutes`
   - `intervalSeconds`
-  - `batterySaverMode` (defaults to `true` on coarse-pointer/mobile-like devices when unset)
-- `eliteTimer_audioPrefs`
-  - `bgmEnabled` defaults to `false` unless user opts in
 
 Workout data:
 

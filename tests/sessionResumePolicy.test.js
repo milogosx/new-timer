@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   doesWorkoutMatchSavedSession,
   getInitialSavedSession,
+  resolveResumeExerciseProgress,
 } from '../src/utils/sessionResumePolicy.js';
 
 test('getInitialSavedSession returns null for missing or inactive sessions', () => {
@@ -40,4 +41,34 @@ test('doesWorkoutMatchSavedSession compares workout IDs with timer-only null sem
   assert.equal(doesWorkoutMatchSavedSession({ workoutId: 'w1' }, { id: 'w2' }), false);
   assert.equal(doesWorkoutMatchSavedSession({ workoutId: null }, null), true);
   assert.equal(doesWorkoutMatchSavedSession(null, { id: 'w1' }), false);
+});
+
+test('resolveResumeExerciseProgress restores saved checklist progress only when workout identity matches', () => {
+  const exercises = [
+    { sets: 2 },
+    { sets: 3 },
+  ];
+  const savedSession = {
+    workoutId: 'w1',
+    exerciseProgress: [
+      { completed: true, setsCompleted: [true, true] },
+      { completed: false, setsCompleted: [true, false, false] },
+    ],
+  };
+
+  assert.deepEqual(
+    resolveResumeExerciseProgress(savedSession, { id: 'w1' }, exercises),
+    [
+      { completed: true, setsCompleted: [true, true] },
+      { completed: false, setsCompleted: [true, false, false] },
+    ]
+  );
+
+  assert.deepEqual(
+    resolveResumeExerciseProgress(savedSession, { id: 'w2' }, exercises),
+    [
+      { completed: false, setsCompleted: [false, false] },
+      { completed: false, setsCompleted: [false, false, false] },
+    ]
+  );
 });

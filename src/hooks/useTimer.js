@@ -432,16 +432,6 @@ export function useTimer(
     setCompletedElapsedSeconds(0);
   }, [intervalSeconds, stopTimers]);
 
-  const finish = useCallback(() => {
-    if (statusRef.current === 'idle') return;
-    const finalElapsed = Math.floor(getSessionElapsedMs() / 1000);
-    setCompletedElapsedSeconds(finalElapsed);
-    stopTimers();
-    setStatus('idle');
-    statusRef.current = 'idle';
-    clearSessionState();
-  }, [getSessionElapsedMs, stopTimers]);
-
   const quickAdd = useCallback((seconds) => {
     if (statusRef.current !== 'running') return;
 
@@ -565,7 +555,6 @@ export function useTimer(
     pause,
     resume,
     reset,
-    finish,
     quickAdd,
     resumeSession,
     persistSession,

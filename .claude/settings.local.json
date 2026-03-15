@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(npx --yes create-vite@latest:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(npx vite build:*)",
+      "Bash(lsof:*)",
+      "Bash(npm ls:*)",
+      "Bash(node:*)",
+      "Bash(ls:*)",
+      "Bash(xargs kill:*)",
+      "Bash(npx vite:*)",
+      "mcp__plugin_prompts_chat_prompts_chat__search_skills",
+      "mcp__plugin_prompts_chat_prompts_chat__get_skill",
+      "Bash(cat:*)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:streamable.com)",
+      "Bash(open \"file:///Users/camiloperezsetright/.claude/usage-data/report.html\")"
+    ]
+  }
+}

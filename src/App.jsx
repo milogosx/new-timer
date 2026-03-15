@@ -39,7 +39,7 @@ function App() {
   const [editingCardio, setEditingCardio] = useState(null);
   // Track where editor should return to ('home' or 'library')
   const [editorReturnTo, setEditorReturnTo] = useState(EDITOR_RETURN.LIBRARY);
-  const [storageRevision, setStorageRevision] = useState(0);
+  const [profileRevision, setProfileRevision] = useState(0);
 
   // Detect PWA standalone mode (iOS uses navigator.standalone, Android uses matchMedia)
   useEffect(() => {
@@ -81,7 +81,7 @@ function App() {
     async function initializeCloudProfile() {
       const result = await bootstrapCloudProfile();
       if (!cancelled && result?.status === 'hydrated') {
-        setStorageRevision((previous) => previous + 1);
+        setProfileRevision((previous) => previous + 1);
       }
     }
 
@@ -160,11 +160,15 @@ function App() {
     setScreen(SCREENS.HOME);
   }
 
+  function handleProfileChanged() {
+    setProfileRevision((previous) => previous + 1);
+  }
+
   return (
     <div className="app">
       {screen === SCREENS.HOME && (
         <HomeScreen
-          key={`home-${storageRevision}`}
+          key={`home-${profileRevision}`}
           onStartTimer={handleStartTimer}
           onManageWorkouts={handleManageWorkouts}
           onCreateWorkout={handleCreateWorkoutFromHome}
@@ -182,7 +186,7 @@ function App() {
       )}
       {screen === SCREENS.LIBRARY && (
         <WorkoutLibrary
-          key={`library-${storageRevision}`}
+          key={`library-${profileRevision}`}
           onBack={handleLibraryBack}
           onEdit={handleEditWorkout}
           onCreate={handleCreateWorkoutFromLibrary}
@@ -190,11 +194,13 @@ function App() {
           onEditWarmup={handleEditWarmup}
           onCreateCardio={handleCreateCardio}
           onEditCardio={handleEditCardio}
+          onProfileChanged={handleProfileChanged}
         />
       )}
       {screen === SCREENS.EDITOR && (
         <WorkoutEditor
           workout={editingWorkout}
+          onProfileChanged={handleProfileChanged}
           onSave={handleEditorDone}
           onCancel={handleEditorDone}
         />
@@ -202,6 +208,7 @@ function App() {
       {screen === SCREENS.WARMUP_EDITOR && (
         <WarmupEditor
           warmup={editingWarmup}
+          onProfileChanged={handleProfileChanged}
           onSave={handleReturnToLibrary}
           onCancel={handleReturnToLibrary}
         />
@@ -209,6 +216,7 @@ function App() {
       {screen === SCREENS.CARDIO_EDITOR && (
         <CardioEditor
           cardio={editingCardio}
+          onProfileChanged={handleProfileChanged}
           onSave={handleReturnToLibrary}
           onCancel={handleReturnToLibrary}
         />

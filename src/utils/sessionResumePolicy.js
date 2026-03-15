@@ -1,3 +1,8 @@
+import {
+  createExerciseProgress,
+  normalizeExerciseProgress,
+} from './exerciseProgress.js';
+
 export function getInitialSavedSession(savedSessionState, sessionMinutes, intervalSeconds) {
   if (!savedSessionState || !savedSessionState.sessionActive) return null;
 
@@ -10,4 +15,12 @@ export function getInitialSavedSession(savedSessionState, sessionMinutes, interv
 
 export function doesWorkoutMatchSavedSession(savedSession, workout) {
   return (savedSession?.workoutId || null) === (workout?.id || null);
+}
+
+export function resolveResumeExerciseProgress(savedSession, workout, exercises) {
+  if (!doesWorkoutMatchSavedSession(savedSession, workout)) {
+    return createExerciseProgress(exercises);
+  }
+
+  return normalizeExerciseProgress(exercises, savedSession?.exerciseProgress);
 }

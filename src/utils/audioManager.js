@@ -152,8 +152,8 @@ export async function playBell() {
   source.connect(gainNode);
   gainNode.connect(sfxGainNode);
   source.onended = () => {
-    try { source.disconnect(); } catch {}
-    try { gainNode.disconnect(); } catch {}
+    try { source.disconnect(); } catch { /* ignore disconnect cleanup failures */ }
+    try { gainNode.disconnect(); } catch { /* ignore disconnect cleanup failures */ }
   };
   source.start(0);
 
@@ -260,8 +260,8 @@ export async function playSpeechAnnouncement(key) {
     source.connect(gainNode);
     gainNode.connect(sfxGainNode);
     source.onended = () => {
-      try { source.disconnect(); } catch {}
-      try { gainNode.disconnect(); } catch {}
+      try { source.disconnect(); } catch { /* ignore disconnect cleanup failures */ }
+      try { gainNode.disconnect(); } catch { /* ignore disconnect cleanup failures */ }
       releaseDucking(prevSessionType);
     };
     source.start(0);
@@ -346,8 +346,4 @@ if (typeof document !== 'undefined') {
       keepAliveWatchdog();
     }
   });
-}
-
-export function isInitialized() {
-  return initialized;
 }

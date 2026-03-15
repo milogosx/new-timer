@@ -1,6 +1,6 @@
 # Decision Log
 
-Last updated: February 15, 2026
+Last updated: March 15, 2026
 
 ## ADR-Style Entry Format
 
@@ -93,4 +93,22 @@ Last updated: February 15, 2026
 - Context: Long workout sessions on iPhone showed elevated heat/battery use versus expected timer-app baseline.
 - Alternatives considered: keep full effects always on; remove effects globally with no toggle.
 - Consequence: Lower sustained rendering/animation load on mobile while preserving timing accuracy via monotonic elapsed-time derivation.
+- Status: superseded
+
+### D-010
+
+- Date: 2026-03-15
+- Decision: Freeze Tier 1 contracts to the implemented runtime: `eliteTimer_settings` stores only `sessionMinutes` and `intervalSeconds`, and the dormant `eliteTimer_audioPrefs` storage path is retired.
+- Context: Tests and docs had drifted away from the current application behavior, including references to removed `batterySaverMode`, `useBackgroundMusicState`, and background-music runtime paths.
+- Alternatives considered: restore the removed settings/audio features to match stale docs; keep the dormant audio-preference key despite having no runtime consumer; defer contract alignment until broader architecture work.
+- Consequence: Runtime, tests, and docs now describe the same active storage contract, and future work no longer has a dead audio-preference surface to misread as supported behavior.
+- Status: implemented
+
+### D-011
+
+- Date: 2026-03-15
+- Decision: Clarify Tier 2 boundaries by centralizing saved-session restore policy in `sessionResumePolicy`, fixed timer-phase timing in `timerPhase`, and profile-driven screen refresh in App-level `profileRevision`.
+- Context: Session persistence, timer-phase semantics, and storage-backed screen refresh behavior were split across `TimerScreen`, `useTimer`, `App`, and profile CRUD screens in ways that made bugs and stale-data behavior harder to reason about.
+- Alternatives considered: leave the boundaries implicit until a broader Tier 3 refactor; move directly to a larger architectural split of `workoutStorage` and timer/session modules.
+- Consequence: The current subsystem boundaries are explicit in code without yet restructuring the larger modules. Profile-backed screens now refresh from a shared app-level revision signal, and timer restore/phase rules are defined by dedicated helpers.
 - Status: implemented

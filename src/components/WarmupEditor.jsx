@@ -3,7 +3,7 @@ import { createWarmup, updateWarmup, createExercise } from '../utils/workoutStor
 import { sanitizeExercisesForSave } from '../utils/exerciseSanitizer';
 import './WarmupEditor.css';
 
-export default function WarmupEditor({ warmup, onSave, onCancel }) {
+export default function WarmupEditor({ warmup, onProfileChanged, onSave, onCancel }) {
   const isEditing = !!warmup;
 
   const [name, setName] = useState(warmup?.name || '');
@@ -64,6 +64,7 @@ export default function WarmupEditor({ warmup, onSave, onCancel }) {
       });
     }
 
+    onProfileChanged();
     onSave();
   }
 

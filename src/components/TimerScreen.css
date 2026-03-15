@@ -264,17 +264,6 @@
   flex: 1;
 }
 
-.ctrl-btn-finish {
-  background: var(--surface);
-  color: #FFB300;
-  border-color: rgba(255, 179, 0, 0.3);
-  flex: 1;
-}
-
-.ctrl-btn-finish:active:not(:disabled) {
-  background: rgba(255, 179, 0, 0.1);
-}
-
 /* Session Complete Overlay */
 .complete-overlay {
   position: fixed;

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { loadSettings, saveSettings } from '../utils/storage';
+import { loadSettings, normalizeSettings, saveSettings } from '../utils/storage';
 import { loadWorkouts, sortWorkouts } from '../utils/workoutStorage';
 import FireParticles from './FireParticles';
 import ElectricArc from './ElectricArc';
@@ -16,7 +16,13 @@ const TYPE_LABELS = {
 
 const MAX_VISIBLE_WORKOUTS = 4;
 
-export default function HomeScreen({ onStartTimer, onManageWorkouts, onCreateWorkout, theme, onToggleTheme }) {
+export default function HomeScreen({
+  onStartTimer,
+  onManageWorkouts,
+  onCreateWorkout,
+  theme,
+  onToggleTheme,
+}) {
   const [sessionMinutes, setSessionMinutes] = useState(() => String(loadSettings().sessionMinutes));
   const [intervalSeconds, setIntervalSeconds] = useState(() => String(loadSettings().intervalSeconds));
   const [workouts] = useState(() => sortWorkouts(loadWorkouts()));
@@ -52,12 +58,10 @@ export default function HomeScreen({ onStartTimer, onManageWorkouts, onCreateWor
   }, []);
 
   function getSanitizedSessionSettings() {
-    const mins = Math.max(1, Math.min(180, parseInt(sessionMinutes) || 60));
-    const secs = Math.max(5, Math.min(600, parseInt(intervalSeconds) || 30));
-    return {
-      sessionMinutes: mins,
-      intervalSeconds: secs,
-    };
+    return normalizeSettings({
+      sessionMinutes,
+      intervalSeconds,
+    });
   }
 
   // One-tap start: tap a workout card → go straight to timer

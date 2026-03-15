@@ -3,7 +3,7 @@ import { createCardio, updateCardio, createExercise } from '../utils/workoutStor
 import { sanitizeExercisesForSave } from '../utils/exerciseSanitizer';
 import './CardioEditor.css';
 
-export default function CardioEditor({ cardio, onSave, onCancel }) {
+export default function CardioEditor({ cardio, onProfileChanged, onSave, onCancel }) {
     const isEditing = !!cardio;
 
     const [name, setName] = useState(cardio?.name || '');
@@ -64,6 +64,7 @@ export default function CardioEditor({ cardio, onSave, onCancel }) {
             });
         }
 
+        onProfileChanged();
         onSave();
     }
 

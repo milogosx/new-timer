@@ -1,12 +1,20 @@
+function normalizeFieldNumber(value, fallback, minimum) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.max(minimum, parsed);
+}
+
 export function sanitizeExercisesForSave(exercises, defaults) {
   return exercises
     .filter((exercise) => exercise.name.trim() !== '')
     .map((exercise) => ({
       ...exercise,
       name: exercise.name.trim(),
-      sets: Math.max(1, parseInt(exercise.sets) || defaults.sets),
+      sets: normalizeFieldNumber(exercise.sets, defaults.sets, 1),
       reps: exercise.reps.trim() || defaults.reps,
-      rest: Math.max(0, parseInt(exercise.rest) || defaults.rest),
+      rest: normalizeFieldNumber(exercise.rest, defaults.rest, 0),
       rpe: exercise.rpe.trim() || defaults.rpe,
       note: (exercise.note || '').trim(),
     }));

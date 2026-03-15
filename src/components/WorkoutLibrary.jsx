@@ -1,16 +1,14 @@
 import { useState } from 'react';
 import {
-  loadWorkouts,
+  loadWorkoutLibraryData,
   deleteWorkout,
   togglePinWorkout,
   resetAllWorkouts,
-  sortWorkouts,
-  loadWarmups,
   deleteWarmup,
-  resetAllWarmups,
-  loadCardios,
   deleteCardio,
+  resetAllWarmups,
   resetAllCardios,
+  sortWorkouts,
 } from '../utils/workoutStorage';
 import './WorkoutLibrary.css';
 
@@ -30,10 +28,12 @@ export default function WorkoutLibrary({
   onEditWarmup,
   onCreateCardio,
   onEditCardio,
+  onProfileChanged,
 }) {
-  const [workouts, setWorkouts] = useState(() => sortWorkouts(loadWorkouts()));
-  const [warmups, setWarmups] = useState(() => loadWarmups());
-  const [cardios, setCardios] = useState(() => loadCardios());
+  const initialLibraryData = loadWorkoutLibraryData();
+  const [workouts, setWorkouts] = useState(() => initialLibraryData.workouts);
+  const [warmups, setWarmups] = useState(() => initialLibraryData.warmups);
+  const [cardios, setCardios] = useState(() => initialLibraryData.cardios);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showDeleteWarmupConfirm, setShowDeleteWarmupConfirm] = useState(null);
@@ -42,6 +42,7 @@ export default function WorkoutLibrary({
   function handlePin(id) {
     const updated = togglePinWorkout(id);
     setWorkouts(sortWorkouts(updated));
+    onProfileChanged();
   }
 
   function handleDelete(id) {
@@ -52,6 +53,7 @@ export default function WorkoutLibrary({
     if (showDeleteConfirm) {
       const updated = deleteWorkout(showDeleteConfirm);
       setWorkouts(sortWorkouts(updated));
+      onProfileChanged();
     }
     setShowDeleteConfirm(null);
   }
@@ -62,10 +64,11 @@ export default function WorkoutLibrary({
 
   function confirmDeleteWarmup() {
     if (showDeleteWarmupConfirm) {
-      const updated = deleteWarmup(showDeleteWarmupConfirm);
-      setWarmups(updated);
-      // Refresh workouts since warmup references may have been removed
-      setWorkouts(sortWorkouts(loadWorkouts()));
+      deleteWarmup(showDeleteWarmupConfirm);
+      const nextLibraryData = loadWorkoutLibraryData();
+      setWarmups(nextLibraryData.warmups);
+      setWorkouts(nextLibraryData.workouts);
+      onProfileChanged();
     }
     setShowDeleteWarmupConfirm(null);
   }
@@ -76,10 +79,11 @@ export default function WorkoutLibrary({
 
   function confirmDeleteCardio() {
     if (showDeleteCardioConfirm) {
-      const updated = deleteCardio(showDeleteCardioConfirm);
-      setCardios(updated);
-      // Refresh workouts since cardio references may have been removed
-      setWorkouts(sortWorkouts(loadWorkouts()));
+      deleteCardio(showDeleteCardioConfirm);
+      const nextLibraryData = loadWorkoutLibraryData();
+      setCardios(nextLibraryData.cardios);
+      setWorkouts(nextLibraryData.workouts);
+      onProfileChanged();
     }
     setShowDeleteCardioConfirm(null);
   }
@@ -89,13 +93,15 @@ export default function WorkoutLibrary({
   }
 
   function confirmResetAll() {
-    const defaults = resetAllWorkouts();
-    setWorkouts(sortWorkouts(defaults));
-    const defaultWarmups = resetAllWarmups();
-    setWarmups(defaultWarmups);
-    const defaultCardios = resetAllCardios();
-    setCardios(defaultCardios);
+    resetAllWorkouts();
+    resetAllWarmups();
+    resetAllCardios();
+    const nextLibraryData = loadWorkoutLibraryData();
+    setWorkouts(nextLibraryData.workouts);
+    setWarmups(nextLibraryData.warmups);
+    setCardios(nextLibraryData.cardios);
     setShowResetConfirm(false);
+    onProfileChanged();
   }
 
   return (

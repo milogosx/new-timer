@@ -1,11 +1,16 @@
 import { useState } from 'react';
-import { createWorkout, updateWorkout, createExercise, loadWarmups, loadCardios } from '../utils/workoutStorage';
+import {
+  createWorkout,
+  updateWorkout,
+  createExercise,
+  loadWorkoutAttachmentOptions,
+} from '../utils/workoutStorage';
 import { sanitizeExercisesForSave } from '../utils/exerciseSanitizer';
 import './WorkoutEditor.css';
 
 const WORKOUT_TYPES = ['strength', 'cardio', 'mobility', 'hiit', 'other'];
 
-export default function WorkoutEditor({ workout, onSave, onCancel }) {
+export default function WorkoutEditor({ workout, onProfileChanged, onSave, onCancel }) {
   const isEditing = !!workout;
 
   const [name, setName] = useState(workout?.name || '');
@@ -15,8 +20,9 @@ export default function WorkoutEditor({ workout, onSave, onCancel }) {
   );
   const [selectedWarmupIds, setSelectedWarmupIds] = useState(workout?.warmupIds || []);
   const [selectedCardioIds, setSelectedCardioIds] = useState(workout?.cardioIds || []);
-  const [availableWarmups] = useState(() => loadWarmups());
-  const [availableCardios] = useState(() => loadCardios());
+  const initialAttachmentOptions = loadWorkoutAttachmentOptions();
+  const [availableWarmups] = useState(() => initialAttachmentOptions.warmups);
+  const [availableCardios] = useState(() => initialAttachmentOptions.cardios);
 
   function handleExerciseChange(idx, field, value) {
     const updated = [...exercises];
@@ -89,6 +95,7 @@ export default function WorkoutEditor({ workout, onSave, onCancel }) {
       });
     }
 
+    onProfileChanged();
     onSave();
   }
 

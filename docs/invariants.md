@@ -1,6 +1,6 @@
 # Invariants
 
-Last updated: February 15, 2026
+Last updated: March 15, 2026
 
 ## Timer Invariants
 
@@ -12,14 +12,19 @@ Last updated: February 15, 2026
   - clear persisted active session state
 - Interval count starts at `1` on session start and only increments on interval completion.
 - Quick add creates a temporary rest interval (`circleColor = rest`) and then returns to default interval cadence.
-- Resume must not continue sessions that have already exceeded configured session duration.
-- Battery saver mode may reduce visual effects and tick cadence, but timer elapsed/remaining values must still derive from monotonic runtime timing.
+- Resume may continue sessions that have already exceeded configured session duration; overtime state is allowed after restore.
+- Timer elapsed/remaining values must derive from monotonic runtime timing rather than tick frequency alone.
+- Header phase labels and speech milestones use a fixed 15-minute warm-up timing window capped by total session length; attached warm-up/cardio routines do not change that timing boundary.
 
 ## Persistence Invariants
 
 - Active session payload (`eliteTimer_activeSession`) is only meaningful when `sessionActive = true`.
 - Session duration is persisted in seconds and must match timer configuration for timing resume.
 - Exercise progress persistence is best-effort and tied to active sessions.
+- Saved session metadata is limited to workout identity (`workoutId`, `workoutName`) and checklist progress.
+- Saved checklist progress is restored only when saved workout identity matches the current workout identity; otherwise the checklist resets.
+- Settings payload (`eliteTimer_settings`) currently contains only `sessionMinutes` and `intervalSeconds`.
+- Settings normalization clamps numeric values into supported bounds and falls back to defaults for non-numeric values.
 - Storage read/write failures must fail safely without crashing app startup.
 - Workout profile boot hydration is best-effort and runs without blocking first interactive screen render.
 - Workout profile writes must update local cache first, then queue debounced cloud sync writes.
@@ -42,7 +47,7 @@ Last updated: February 15, 2026
 - Theme source of truth is `<html data-theme="dark|light">` plus `er-timer-theme`.
 - Theme switch must update browser `meta[name="theme-color"]`.
 - Home, Timer, Library, and Editors must remain operable in both themes.
-- Timer UI must remain fully operable when battery saver mode is enabled.
+- Timer UI must remain fully operable through countdown, running, paused, resume, and completion flows.
 
 ## How To Validate
 

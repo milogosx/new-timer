@@ -373,6 +373,52 @@ export function sortWorkouts(workouts) {
   });
 }
 
+export function loadWorkoutLibraryData() {
+  return {
+    workouts: sortWorkouts(loadWorkouts()),
+    warmups: loadWarmups(),
+    cardios: loadCardios(),
+  };
+}
+
+export function loadWorkoutAttachmentOptions() {
+  return {
+    warmups: loadWarmups(),
+    cardios: loadCardios(),
+  };
+}
+
+function removeRoutineReferencesFromWorkouts(workouts, { warmupId = null, cardioId = null } = {}) {
+  let modified = false;
+
+  const nextWorkouts = workouts.map((workout) => {
+    let nextWorkout = workout;
+
+    if (warmupId && Array.isArray(workout.warmupIds) && workout.warmupIds.includes(warmupId)) {
+      nextWorkout = {
+        ...nextWorkout,
+        warmupIds: workout.warmupIds.filter((id) => id !== warmupId),
+      };
+      modified = true;
+    }
+
+    if (cardioId && Array.isArray(workout.cardioIds) && workout.cardioIds.includes(cardioId)) {
+      nextWorkout = {
+        ...nextWorkout,
+        cardioIds: workout.cardioIds.filter((id) => id !== cardioId),
+      };
+      modified = true;
+    }
+
+    return nextWorkout;
+  });
+
+  return {
+    workouts: nextWorkouts,
+    modified,
+  };
+}
+
 // ─── WARM-UPS ─────────────────────────────────────────────
 // Warm-ups are reusable mini-routines that can be attached to workouts.
 // They share the same exercise structure.
@@ -530,15 +576,7 @@ export function deleteWarmup(id) {
     saveDeletedDefaultIds(DELETED_DEFAULT_WARMUP_IDS_KEY, deletedDefaultIds);
   }
   saveWarmups(warmups);
-  // Also remove this warmup from any workouts that reference it
-  const workouts = loadWorkouts();
-  let modified = false;
-  workouts.forEach((workout) => {
-    if (workout.warmupIds && workout.warmupIds.includes(id)) {
-      workout.warmupIds = workout.warmupIds.filter((wid) => wid !== id);
-      modified = true;
-    }
-  });
+  const { workouts, modified } = removeRoutineReferencesFromWorkouts(loadWorkouts(), { warmupId: id });
   if (modified) saveWorkouts(workouts);
   return warmups;
 }
@@ -717,15 +755,7 @@ export function deleteCardio(id) {
     saveDeletedDefaultIds(DELETED_DEFAULT_CARDIO_IDS_KEY, deletedDefaultIds);
   }
   saveCardios(cardios);
-  // Also remove this cardio from any workouts that reference it
-  const workouts = loadWorkouts();
-  let modified = false;
-  workouts.forEach((workout) => {
-    if (workout.cardioIds && workout.cardioIds.includes(id)) {
-      workout.cardioIds = workout.cardioIds.filter((cid) => cid !== id);
-      modified = true;
-    }
-  });
+  const { workouts, modified } = removeRoutineReferencesFromWorkouts(loadWorkouts(), { cardioId: id });
   if (modified) saveWorkouts(workouts);
   return cardios;
 }
@@ -751,4 +781,21 @@ export function getCardioExercisesForWorkout(workout) {
     }
   });
   return exercises;
+}
+
+export function getWorkoutExerciseSections(workout) {
+  const warmupExercises = workout ? getWarmupExercisesForWorkout(workout) : [];
+  const cardioExercises = workout ? getCardioExercisesForWorkout(workout) : [];
+  const mainExercises = (workout?.exercises || []).map((exercise) => ({
+    ...exercise,
+    _isWarmup: false,
+    _isCardio: false,
+  }));
+
+  return {
+    warmupExercises,
+    cardioExercises,
+    mainExercises,
+    exercises: [...warmupExercises, ...cardioExercises, ...mainExercises],
+  };
 }

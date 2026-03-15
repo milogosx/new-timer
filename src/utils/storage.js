@@ -1,23 +1,24 @@
 const ACTIVE_SESSION_KEY = 'eliteTimer_activeSession';
 const SETTINGS_KEY = 'eliteTimer_settings';
-const AUDIO_PREFS_KEY = 'eliteTimer_audioPrefs';
-const DEFAULT_AUDIO_PREFS = { bgmEnabled: false };
-const DEFAULT_SETTINGS = { sessionMinutes: 60, intervalSeconds: 30 };
+const SETTINGS_LIMITS = Object.freeze({
+  sessionMinutes: { min: 1, max: 180, fallback: 60 },
+  intervalSeconds: { min: 5, max: 600, fallback: 30 },
+});
 
-function normalizePositiveNumber(value, fallback) {
+function normalizeBoundedNumber(value, limits) {
   const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return fallback;
+  if (!Number.isFinite(parsed)) {
+    return limits.fallback;
   }
-  return parsed;
+  return Math.max(limits.min, Math.min(limits.max, parsed));
 }
 
-function normalizeSettings(settings) {
+export function normalizeSettings(settings) {
   const source = settings && typeof settings === 'object' ? settings : {};
 
   return {
-    sessionMinutes: normalizePositiveNumber(source.sessionMinutes, DEFAULT_SETTINGS.sessionMinutes),
-    intervalSeconds: normalizePositiveNumber(source.intervalSeconds, DEFAULT_SETTINGS.intervalSeconds),
+    sessionMinutes: normalizeBoundedNumber(source.sessionMinutes, SETTINGS_LIMITS.sessionMinutes),
+    intervalSeconds: normalizeBoundedNumber(source.intervalSeconds, SETTINGS_LIMITS.intervalSeconds),
   };
 }
 
@@ -62,35 +63,5 @@ export function loadSettings() {
     return normalizeSettings(JSON.parse(data));
   } catch {
     return normalizeSettings(null);
-  }
-}
-
-export function saveAudioPreferences(preferences) {
-  try {
-    const next = {
-      ...DEFAULT_AUDIO_PREFS,
-      ...(preferences || {}),
-      bgmEnabled: Boolean(preferences?.bgmEnabled),
-    };
-    localStorage.setItem(AUDIO_PREFS_KEY, JSON.stringify(next));
-  } catch (err) {
-    console.error('Failed to save audio preferences:', err);
-  }
-}
-
-export function loadAudioPreferences() {
-  try {
-    const data = localStorage.getItem(AUDIO_PREFS_KEY);
-    if (!data) return { ...DEFAULT_AUDIO_PREFS };
-
-    const parsed = JSON.parse(data);
-    return {
-      ...DEFAULT_AUDIO_PREFS,
-      ...(parsed || {}),
-      bgmEnabled: Boolean(parsed?.bgmEnabled),
-    };
-  } catch (err) {
-    console.error('Failed to load audio preferences:', err);
-    return { ...DEFAULT_AUDIO_PREFS };
   }
 }

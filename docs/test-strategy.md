@@ -1,11 +1,12 @@
 # Test Strategy
 
-Last updated: February 15, 2026
+Last updated: March 15, 2026
 
 ## Test Pyramid
 
 - Unit tests (primary):
   - timer derivation and formatting (`src/utils/timerLogic.js`)
+  - fixed timer-phase and speech-milestone policy (`src/utils/timerPhase.js`)
   - storage/migration contracts (`src/utils/workoutStorage.js`)
   - cloud profile merge ordering contracts (`netlify/profileStore.js`)
   - deterministic waveform geometry (`src/utils/ecgWaveform.js`)
@@ -37,7 +38,6 @@ Last updated: February 15, 2026
   - disable low-power restrictions where possible for consistency
 - Wake lock checks:
   - start session and confirm lock indicator appears while active
-  - repeat the same check with Battery Saver enabled and disabled
   - repeat on both dark and light theme to confirm no theme-coupled regressions
   - background app for ~20s and return; timer catches up and app remains usable
   - verify no crash or stuck UI when wake lock is unsupported/denied
@@ -45,7 +45,7 @@ Last updated: February 15, 2026
   - first user interaction unlocks audio pathway
   - countdown beeps play during start sequence
   - interval bell plays on interval boundaries
-  - background music toggle on/off updates immediately and persists across reload
+  - milestone speech announcements play at their configured thresholds when audio is available
 - Resume checks:
   - paused session reload restores paused state
   - running session reload restores running state

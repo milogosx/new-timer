@@ -6,18 +6,20 @@ import { useTimer } from '../hooks/useTimer';
 import { formatTime } from '../utils/timerLogic';
 import {
   createExerciseProgress,
-  normalizeExerciseProgress,
   toggleExerciseProgress,
   toggleSetProgress,
 } from '../utils/exerciseProgress';
 import {
   doesWorkoutMatchSavedSession,
   getInitialSavedSession,
+  resolveResumeExerciseProgress,
 } from '../utils/sessionResumePolicy';
 import { loadSessionState, clearSessionState } from '../utils/storage';
 import { isWakeLockActive, isWakeLockSupported } from '../utils/wakeLock';
 import { playSpeechAnnouncement } from '../utils/audioManager';
-import { getWarmupExercisesForWorkout, getCardioExercisesForWorkout } from '../utils/workoutStorage';
+import { buildSessionMetadata } from '../utils/sessionSnapshot';
+import { getWorkoutExerciseSections } from '../utils/workoutStorage';
+import { getSessionPhase, getSpeechMilestones } from '../utils/timerPhase';
 import './TimerScreen.css';
 
 function haptic(style = 'light') {
@@ -31,8 +33,6 @@ function getTimerMode(circleColor, status) {
   if (status === 'idle') return 'idle';
   return 'running';
 }
-
-const WARMUP_DURATION_SEC = 15 * 60;
 
 export default function TimerScreen({
   sessionMinutes,
@@ -48,29 +48,24 @@ export default function TimerScreen({
   const [savedSession, setSavedSession] = useState(() => initialSavedSession);
   const [showResumeDialog, setShowResumeDialog] = useState(() => Boolean(initialSavedSession));
 
-  // Merge warm-up, cardio, and main exercises into a single list
-  const exercises = useMemo(() => {
-    const warmupExercises = workout ? getWarmupExercisesForWorkout(workout) : [];
-    const cardioExercises = workout ? getCardioExercisesForWorkout(workout) : [];
-    const mainExercises = (workout?.exercises || []).map((ex) => ({ ...ex, _isWarmup: false, _isCardio: false }));
-    return [...warmupExercises, ...cardioExercises, ...mainExercises];
-  }, [workout]);
+  const { exercises } = useMemo(() => getWorkoutExerciseSections(workout), [workout]);
   const [exerciseProgress, setExerciseProgress] = useState(() =>
     createExerciseProgress(exercises)
   );
-  const sessionMetadata = useMemo(() => ({
-    workoutId: workout?.id || null,
-    workoutName: workout?.name || null,
-    exerciseProgress,
-  }), [workout?.id, workout?.name, exerciseProgress]);
+  const sessionMetadata = useMemo(
+    () => buildSessionMetadata(workout, exerciseProgress),
+    [workout, exerciseProgress]
+  );
   const timer = useTimer(
     sessionMinutes,
     intervalSeconds,
     sessionMetadata,
   );
 
-  const isWarmupPhase = timer.elapsedSeconds < WARMUP_DURATION_SEC && timer.elapsedSeconds < (sessionMinutes * 60);
-  const phaseLabel = isWarmupPhase ? 'WARM UP' : 'WORKOUT';
+  const { isWarmupPhase, phaseLabel } = useMemo(
+    () => getSessionPhase(timer.elapsedSeconds, sessionMinutes),
+    [timer.elapsedSeconds, sessionMinutes]
+  );
 
   const announcedSetRef = useRef(new Set());
 
@@ -88,22 +83,8 @@ export default function TimerScreen({
     if (timer.status !== 'running') return;
 
     const s = Math.floor(timer.elapsedSeconds);
-    const warmupS = WARMUP_DURATION_SEC;
-    const totalS = sessionMinutes * 60;
     const announced = announcedSetRef.current;
-
-    // Build ordered milestone list — checked first-to-last so the earliest
-    // un-announced milestone fires first (only one per tick to avoid stacking).
-    const milestones = [
-      { key: 'start_warmup', at: 1 },
-      { key: 'warmup_complete', at: warmupS, guard: totalS > warmupS },
-      { key: 'quarter_way', at: Math.floor(totalS * 0.25), guard: Math.floor(totalS * 0.25) > warmupS },
-      { key: 'halfway', at: Math.floor(totalS / 2), guard: Math.floor(totalS / 2) > warmupS },
-      { key: 'three_quarters', at: Math.floor(totalS * 0.75), guard: Math.floor(totalS * 0.75) > warmupS },
-      { key: 'five_minutes', at: totalS - 300, guard: totalS - 300 > warmupS },
-      { key: 'one_minute', at: totalS - 60, guard: totalS - 60 > warmupS },
-      { key: 'workout_complete', at: totalS, guard: totalS > 0 },
-    ];
+    const milestones = getSpeechMilestones(sessionMinutes);
 
     for (const m of milestones) {
       if (announced.has(m.key)) continue;
@@ -149,12 +130,8 @@ export default function TimerScreen({
       }
 
       const didResume = timer.resumeSession(savedSession);
-      if (didResume && workoutMatchesSavedSession) {
-        setExerciseProgress(
-          normalizeExerciseProgress(exercises, savedSession.exerciseProgress)
-        );
-      } else if (didResume) {
-        setExerciseProgress(createExerciseProgress(exercises));
+      if (didResume) {
+        setExerciseProgress(resolveResumeExerciseProgress(savedSession, workout, exercises));
       }
     }
     setShowResumeDialog(false);
