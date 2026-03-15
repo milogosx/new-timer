@@ -66,7 +66,9 @@ Primary layers:
 - `src/components/*`: screen and UI components.
 - `src/hooks/useTimer.js`: core timer state machine (countdown/running/paused/resume) with session persistence, wake lock, and audio keepalive integration.
 - `src/utils/storage.js`: session and settings persistence.
-- `src/utils/workoutStorage.js`: workouts/warm-ups/cardio CRUD, schema migration, and screen-facing profile read models.
+- `src/utils/workoutStorage.js`: workouts/warm-ups/cardio CRUD and schema migration.
+- `src/utils/workoutReadModels.js`: screen-facing workout sorting plus Library and Editor read models.
+- `src/utils/workoutExerciseSections.js`: read-only workout/warm-up/cardio exercise section derivation for Timer screen rendering.
 - `src/utils/cloudProfileSync.js`: boot-time profile hydrate + write-through cloud sync for workout entities.
 - `src/utils/sessionSnapshot.js`: pure session payload construction for persistence.
 - `src/utils/sessionResumePolicy.js`: saved-session compatibility, persisted workout identity metadata, and checklist-restore policy.
@@ -113,6 +115,9 @@ Schema versions:
 - `eliteTimer_warmups_schema`
 - `eliteTimer_cardios_schema`
 - `eliteTimer_profile_updated_at`
+- `eliteTimer_workouts_updated_at`
+- `eliteTimer_warmups_updated_at`
+- `eliteTimer_cardios_updated_at`
 - `eliteTimer_deletedDefaultWorkoutIds`
 - `eliteTimer_deletedDefaultWarmupIds`
 - `eliteTimer_deletedDefaultCardioIds`
@@ -130,6 +135,7 @@ Behavior:
 
 - On app boot, cloud profile sync runs in the background and hydrates local workout data when available.
 - Local workout edits queue cloud writes (debounced) so changes become your new defaults.
+- Cloud merge ordering now resolves conflicts per section for workouts, warm-ups, and cardios.
 - If cloud is unreachable, app keeps working with local data only.
 
 ## Deploy Caveats
@@ -145,8 +151,18 @@ Behavior:
 ## Current Priorities / Deferred Work
 
 - Priority now:
+  - Tier 3 is the next pending implementation wave.
+  - Tier 3 starts from the already-implemented sync durability baseline:
+    - client-timestamp conflict ordering
+    - retry-on-failure cloud writes
+    - lifecycle flushes on `online`, `visibilitychange`, and `pagehide`
+    - section-level conflict ordering for workouts, warm-ups, and cardios
   - keep sync durability stable (no data reversion on reload/device switch)
   - keep docs and tests in lockstep with behavior changes
+- Remaining Tier 3 order:
+  1. remaining cloud profile sync conflict-model remediation
+  2. `workoutStorage.js` hub decomposition
+  3. deeper session-state structural consolidation
 - Deferred (must-do before broader sharing):
   - add authentication/authorization guard for profile endpoints
   - choose and implement auth model (Netlify Identity JWT or signed token gate)

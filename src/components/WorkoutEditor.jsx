@@ -3,8 +3,8 @@ import {
   createWorkout,
   updateWorkout,
   createExercise,
-  loadWorkoutAttachmentOptions,
 } from '../utils/workoutStorage';
+import { loadWorkoutAttachmentOptions } from '../utils/workoutReadModels';
 import { sanitizeExercisesForSave } from '../utils/exerciseSanitizer';
 import './WorkoutEditor.css';
 

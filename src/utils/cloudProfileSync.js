@@ -38,11 +38,21 @@ const DELETED_DEFAULT_FIELD_BY_SECTION = {
   warmups: 'deletedDefaultWarmupIds',
   cardios: 'deletedDefaultCardioIds',
 };
+const UPDATED_AT_FIELD_BY_SECTION = {
+  workouts: 'workoutsUpdatedAt',
+  warmups: 'warmupsUpdatedAt',
+  cardios: 'cardiosUpdatedAt',
+};
 
 const DELETED_DEFAULT_STORAGE_KEY_BY_SECTION = {
   workouts: DELETED_DEFAULT_WORKOUT_IDS_KEY,
   warmups: DELETED_DEFAULT_WARMUP_IDS_KEY,
   cardios: DELETED_DEFAULT_CARDIO_IDS_KEY,
+};
+const UPDATED_AT_STORAGE_KEY_BY_SECTION = {
+  workouts: 'eliteTimer_workouts_updated_at',
+  warmups: 'eliteTimer_warmups_updated_at',
+  cardios: 'eliteTimer_cardios_updated_at',
 };
 
 let cloudAvailability = 'unknown';
@@ -125,6 +135,10 @@ function readLocalDeletedDefaultIds(section) {
   return sanitizeStringArray(safeParseJsonRaw(safeGetItem(key))) || [];
 }
 
+function hasLocalDeletedDefaultIds(section) {
+  return safeGetItem(DELETED_DEFAULT_STORAGE_KEY_BY_SECTION[section]) !== null;
+}
+
 function safeParseJsonRaw(raw) {
   if (!raw) return null;
   try {
@@ -150,6 +164,29 @@ function setLocalProfileUpdatedAt(timestamp = Date.now()) {
   return next;
 }
 
+function getLocalSectionUpdatedAt(section) {
+  return Math.max(
+    0,
+    toSafeInt(safeGetItem(UPDATED_AT_STORAGE_KEY_BY_SECTION[section]), 0),
+    getLocalProfileUpdatedAt()
+  );
+}
+
+function setLocalSectionUpdatedAt(section, timestamp = Date.now()) {
+  const next = Math.max(0, toSafeInt(timestamp, Date.now()));
+  safeSetItem(UPDATED_AT_STORAGE_KEY_BY_SECTION[section], String(next));
+  return next;
+}
+
+function patchTouchesSection(section, patch) {
+  if (!patch || typeof patch !== 'object') return false;
+
+  return Array.isArray(patch[section])
+    || Array.isArray(patch[DELETED_DEFAULT_FIELD_BY_SECTION[section]])
+    || toSafeInt(patch[SCHEMA_FIELD_BY_SECTION[section]], 0) > 0
+    || toSafeInt(patch[UPDATED_AT_FIELD_BY_SECTION[section]], 0) > 0;
+}
+
 function buildFullLocalPatch() {
   const patch = {};
   ['workouts', 'warmups', 'cardios'].forEach((section) => {
@@ -163,7 +200,12 @@ function buildFullLocalPatch() {
       patch[SCHEMA_FIELD_BY_SECTION[section]] = schemaVersion;
     }
 
-    patch[DELETED_DEFAULT_FIELD_BY_SECTION[section]] = readLocalDeletedDefaultIds(section);
+    if (hasLocalDeletedDefaultIds(section)) {
+      patch[DELETED_DEFAULT_FIELD_BY_SECTION[section]] = readLocalDeletedDefaultIds(section);
+    }
+    if (patchTouchesSection(section, patch)) {
+      patch[UPDATED_AT_FIELD_BY_SECTION[section]] = getLocalSectionUpdatedAt(section);
+    }
   });
   return patch;
 }
@@ -187,6 +229,12 @@ function sanitizeIncomingPatch(patch) {
     const deletedDefaultField = DELETED_DEFAULT_FIELD_BY_SECTION[section];
     if (Array.isArray(patch[deletedDefaultField])) {
       next[deletedDefaultField] = sanitizeStringArray(patch[deletedDefaultField]) || [];
+    }
+
+    const updatedAtField = UPDATED_AT_FIELD_BY_SECTION[section];
+    const sectionUpdatedAt = Math.max(0, toSafeInt(patch[updatedAtField], 0));
+    if (sectionUpdatedAt > 0) {
+      next[updatedAtField] = sectionUpdatedAt;
     }
   });
 
@@ -307,6 +355,14 @@ function applyRemoteProfileToLocal(profile) {
     if (schemaVersion > 0) {
       safeSetItem(SCHEMA_KEY_BY_SECTION[section], String(schemaVersion));
     }
+
+    const sectionUpdatedAtField = UPDATED_AT_FIELD_BY_SECTION[section];
+    const sectionTimestamp = Math.max(
+      0,
+      toSafeInt(profile[sectionUpdatedAtField], 0),
+      toSafeInt(profile.updatedAt, 0)
+    ) || Date.now();
+    setLocalSectionUpdatedAt(section, sectionTimestamp);
   });
 
   setLocalProfileUpdatedAt(profile.updatedAt || Date.now());
@@ -367,10 +423,23 @@ export function queueCloudProfileSync(sectionPatch = {}) {
   }
 
   const nextUpdatedAt = setLocalProfileUpdatedAt(Date.now());
-  const sanitizedPatch = sanitizeIncomingPatch({
+  const stampedPatch = {
     ...sectionPatch,
     clientUpdatedAt: nextUpdatedAt,
+  };
+
+  ['workouts', 'warmups', 'cardios'].forEach((section) => {
+    if (!patchTouchesSection(section, stampedPatch)) return;
+
+    const sectionUpdatedAt = Math.max(
+      0,
+      toSafeInt(stampedPatch[UPDATED_AT_FIELD_BY_SECTION[section]], 0),
+      setLocalSectionUpdatedAt(section, nextUpdatedAt)
+    );
+    stampedPatch[UPDATED_AT_FIELD_BY_SECTION[section]] = sectionUpdatedAt;
   });
+
+  const sanitizedPatch = sanitizeIncomingPatch(stampedPatch);
 
   if (Object.keys(sanitizedPatch).length === 0) {
     return;
@@ -402,4 +471,19 @@ export function bindCloudSyncLifecycle() {
   window.addEventListener('online', handleOnline);
   document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('pagehide', handlePageHide);
+}
+
+export function __resetCloudProfileSyncForTests() {
+  if (flushTimerId !== null) {
+    clearTimeout(flushTimerId);
+  }
+  cloudAvailability = 'unknown';
+  pendingPatch = {};
+  flushTimerId = null;
+  flushInFlight = false;
+  lifecycleBound = false;
+}
+
+export async function __flushCloudProfileSyncForTests() {
+  await flushPendingPatch();
 }

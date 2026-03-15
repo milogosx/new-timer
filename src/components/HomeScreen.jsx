@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { loadSettings, normalizeSettings, saveSettings } from '../utils/storage';
-import { loadWorkouts, sortWorkouts } from '../utils/workoutStorage';
+import { loadWorkouts } from '../utils/workoutStorage';
+import { sortWorkouts } from '../utils/workoutReadModels';
 import FireParticles from './FireParticles';
 import ElectricArc from './ElectricArc';
 import AmbientEcgPulse from './AmbientEcgPulse';

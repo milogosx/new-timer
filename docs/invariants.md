@@ -29,6 +29,7 @@ Last updated: March 15, 2026
 - Workout profile boot hydration is best-effort and runs without blocking first interactive screen render.
 - Workout profile writes must update local cache first, then queue debounced cloud sync writes.
 - Cloud profile timestamps (`eliteTimer_profile_updated_at` vs remote `updatedAt`) determine local-vs-remote winner on boot.
+- Cloud profile merge ordering is section-based for `workouts`, `warmups`, and `cardios`; a stale section patch must not overwrite newer data in another section.
 - Failed cloud writes must be retried; they must not be silently discarded.
 
 ## Workout Data Invariants

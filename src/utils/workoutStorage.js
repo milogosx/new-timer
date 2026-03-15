@@ -364,30 +364,6 @@ export function createExercise(overrides = {}) {
   };
 }
 
-// Sort workouts: pinned first, then by creation date (newest first)
-export function sortWorkouts(workouts) {
-  return [...workouts].sort((a, b) => {
-    if (a.pinned && !b.pinned) return -1;
-    if (!a.pinned && b.pinned) return 1;
-    return b.createdAt - a.createdAt;
-  });
-}
-
-export function loadWorkoutLibraryData() {
-  return {
-    workouts: sortWorkouts(loadWorkouts()),
-    warmups: loadWarmups(),
-    cardios: loadCardios(),
-  };
-}
-
-export function loadWorkoutAttachmentOptions() {
-  return {
-    warmups: loadWarmups(),
-    cardios: loadCardios(),
-  };
-}
-
 function removeRoutineReferencesFromWorkouts(workouts, { warmupId = null, cardioId = null } = {}) {
   let modified = false;
 
@@ -588,22 +564,6 @@ export function resetAllWarmups() {
   return canonical;
 }
 
-// Get warm-up exercises for a workout (resolves warmupIds to exercise arrays)
-export function getWarmupExercisesForWorkout(workout) {
-  if (!workout?.warmupIds || workout.warmupIds.length === 0) return [];
-  const warmups = loadWarmups();
-  const exercises = [];
-  workout.warmupIds.forEach((wid) => {
-    const warmup = warmups.find((w) => w.id === wid);
-    if (warmup) {
-      warmup.exercises.forEach((ex) => {
-        exercises.push({ ...ex, _isWarmup: true, _warmupName: warmup.name });
-      });
-    }
-  });
-  return exercises;
-}
-
 // ─── CARDIO ROUTINES ──────────────────────────────────────
 // Cardio routines are reusable mini-routines that can be attached to workouts.
 // They appear after warm-ups and before main exercises.
@@ -765,37 +725,4 @@ export function resetAllCardios() {
   const canonical = createCanonicalCardios();
   saveCardios(canonical);
   return canonical;
-}
-
-// Get cardio exercises for a workout (resolves cardioIds to exercise arrays)
-export function getCardioExercisesForWorkout(workout) {
-  if (!workout?.cardioIds || workout.cardioIds.length === 0) return [];
-  const cardios = loadCardios();
-  const exercises = [];
-  workout.cardioIds.forEach((cid) => {
-    const cardio = cardios.find((c) => c.id === cid);
-    if (cardio) {
-      cardio.exercises.forEach((ex) => {
-        exercises.push({ ...ex, _isCardio: true, _cardioName: cardio.name });
-      });
-    }
-  });
-  return exercises;
-}
-
-export function getWorkoutExerciseSections(workout) {
-  const warmupExercises = workout ? getWarmupExercisesForWorkout(workout) : [];
-  const cardioExercises = workout ? getCardioExercisesForWorkout(workout) : [];
-  const mainExercises = (workout?.exercises || []).map((exercise) => ({
-    ...exercise,
-    _isWarmup: false,
-    _isCardio: false,
-  }));
-
-  return {
-    warmupExercises,
-    cardioExercises,
-    mainExercises,
-    exercises: [...warmupExercises, ...cardioExercises, ...mainExercises],
-  };
 }

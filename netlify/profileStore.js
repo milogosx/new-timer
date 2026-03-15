@@ -3,6 +3,22 @@ import { connectLambda, getStore } from '@netlify/blobs';
 const STORE_NAME = 'elite-timer-profiles';
 const PROFILE_ID = globalThis.process?.env?.ELITE_TIMER_PROFILE_ID || 'solo';
 const PROFILE_KEY = `profile:${PROFILE_ID}`;
+const SECTIONS = ['workouts', 'warmups', 'cardios'];
+const SCHEMA_FIELD_BY_SECTION = {
+  workouts: 'workoutsSchemaVersion',
+  warmups: 'warmupsSchemaVersion',
+  cardios: 'cardiosSchemaVersion',
+};
+const DELETED_DEFAULT_FIELD_BY_SECTION = {
+  workouts: 'deletedDefaultWorkoutIds',
+  warmups: 'deletedDefaultWarmupIds',
+  cardios: 'deletedDefaultCardioIds',
+};
+const UPDATED_AT_FIELD_BY_SECTION = {
+  workouts: 'workoutsUpdatedAt',
+  warmups: 'warmupsUpdatedAt',
+  cardios: 'cardiosUpdatedAt',
+};
 
 function toSafeInt(value, fallback = 0) {
   const parsed = Number.parseInt(value, 10);
@@ -32,33 +48,45 @@ function normalizeProfileRecord(value) {
   if (!value || typeof value !== 'object') return null;
 
   const profile = {};
-
-  if (Array.isArray(value.workouts)) profile.workouts = cloneJson(value.workouts);
-  if (Array.isArray(value.warmups)) profile.warmups = cloneJson(value.warmups);
-  if (Array.isArray(value.cardios)) profile.cardios = cloneJson(value.cardios);
-
-  const workoutsSchemaVersion = toSafeInt(value.workoutsSchemaVersion, 0);
-  if (workoutsSchemaVersion > 0) profile.workoutsSchemaVersion = workoutsSchemaVersion;
-
-  const warmupsSchemaVersion = toSafeInt(value.warmupsSchemaVersion, 0);
-  if (warmupsSchemaVersion > 0) profile.warmupsSchemaVersion = warmupsSchemaVersion;
-
-  const cardiosSchemaVersion = toSafeInt(value.cardiosSchemaVersion, 0);
-  if (cardiosSchemaVersion > 0) profile.cardiosSchemaVersion = cardiosSchemaVersion;
-
-  const deletedDefaultWorkoutIds = sanitizeStringArray(value.deletedDefaultWorkoutIds);
-  if (deletedDefaultWorkoutIds) profile.deletedDefaultWorkoutIds = deletedDefaultWorkoutIds;
-
-  const deletedDefaultWarmupIds = sanitizeStringArray(value.deletedDefaultWarmupIds);
-  if (deletedDefaultWarmupIds) profile.deletedDefaultWarmupIds = deletedDefaultWarmupIds;
-
-  const deletedDefaultCardioIds = sanitizeStringArray(value.deletedDefaultCardioIds);
-  if (deletedDefaultCardioIds) profile.deletedDefaultCardioIds = deletedDefaultCardioIds;
-
-  const updatedAt = Math.max(
+  const fallbackUpdatedAt = Math.max(
     0,
     toSafeInt(value.updatedAt, 0),
     toSafeInt(value.clientUpdatedAt, 0)
+  );
+
+  SECTIONS.forEach((section) => {
+    if (Array.isArray(value[section])) {
+      profile[section] = cloneJson(value[section]);
+    }
+
+    const schemaField = SCHEMA_FIELD_BY_SECTION[section];
+    const schemaVersion = toSafeInt(value[schemaField], 0);
+    if (schemaVersion > 0) {
+      profile[schemaField] = schemaVersion;
+    }
+
+    const deletedDefaultField = DELETED_DEFAULT_FIELD_BY_SECTION[section];
+    const deletedDefaultIds = sanitizeStringArray(value[deletedDefaultField]);
+    if (deletedDefaultIds) {
+      profile[deletedDefaultField] = deletedDefaultIds;
+    }
+
+    const sectionTouched = Array.isArray(value[section])
+      || schemaVersion > 0
+      || Array.isArray(value[deletedDefaultField]);
+    const sectionUpdatedAtField = UPDATED_AT_FIELD_BY_SECTION[section];
+    const explicitSectionUpdatedAt = toSafeInt(value[sectionUpdatedAtField], 0);
+    const sectionUpdatedAt = explicitSectionUpdatedAt > 0
+      ? explicitSectionUpdatedAt
+      : (sectionTouched ? fallbackUpdatedAt : 0);
+    if (sectionUpdatedAt > 0) {
+      profile[sectionUpdatedAtField] = sectionUpdatedAt;
+    }
+  });
+
+  const updatedAt = Math.max(
+    fallbackUpdatedAt,
+    ...SECTIONS.map((section) => toSafeInt(profile[UPDATED_AT_FIELD_BY_SECTION[section]], 0))
   );
   if (updatedAt > 0) profile.updatedAt = updatedAt;
 
@@ -117,16 +145,56 @@ export function mergeProfilePatch(existingProfile, patch) {
     toSafeInt(normalizedPatch.updatedAt, 0)
   );
 
-  if (incomingUpdatedAt > 0 && existingUpdatedAt > 0 && incomingUpdatedAt < existingUpdatedAt) {
-    return base;
-  }
-
   const merged = {
     ...base,
-    ...normalizedPatch,
   };
 
-  const nextUpdatedAt = incomingUpdatedAt || existingUpdatedAt || Date.now();
+  SECTIONS.forEach((section) => {
+    const schemaField = SCHEMA_FIELD_BY_SECTION[section];
+    const deletedDefaultField = DELETED_DEFAULT_FIELD_BY_SECTION[section];
+    const updatedAtField = UPDATED_AT_FIELD_BY_SECTION[section];
+    const sectionTouched = Object.hasOwn(normalizedPatch, section)
+      || Object.hasOwn(normalizedPatch, schemaField)
+      || Object.hasOwn(normalizedPatch, deletedDefaultField)
+      || Object.hasOwn(normalizedPatch, updatedAtField);
+
+    if (!sectionTouched) {
+      return;
+    }
+
+    const existingSectionUpdatedAt = toSafeInt(base[updatedAtField], 0);
+    const explicitSectionUpdatedAt = toSafeInt(normalizedPatch[updatedAtField], 0);
+    const incomingSectionUpdatedAt = explicitSectionUpdatedAt > 0
+      ? explicitSectionUpdatedAt
+      : incomingUpdatedAt;
+
+    if (
+      incomingSectionUpdatedAt > 0
+      && existingSectionUpdatedAt > 0
+      && incomingSectionUpdatedAt < existingSectionUpdatedAt
+    ) {
+      return;
+    }
+
+    if (Object.hasOwn(normalizedPatch, section)) {
+      merged[section] = normalizedPatch[section];
+    }
+    if (Object.hasOwn(normalizedPatch, schemaField)) {
+      merged[schemaField] = normalizedPatch[schemaField];
+    }
+    if (Object.hasOwn(normalizedPatch, deletedDefaultField)) {
+      merged[deletedDefaultField] = normalizedPatch[deletedDefaultField];
+    }
+    if (incomingSectionUpdatedAt > 0) {
+      merged[updatedAtField] = incomingSectionUpdatedAt;
+    }
+  });
+
+  const nextUpdatedAt = Math.max(
+    existingUpdatedAt,
+    incomingUpdatedAt,
+    ...SECTIONS.map((section) => toSafeInt(merged[UPDATED_AT_FIELD_BY_SECTION[section]], 0))
+  ) || Date.now();
   merged.updatedAt = nextUpdatedAt;
 
   return merged;

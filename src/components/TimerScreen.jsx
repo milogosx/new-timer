@@ -18,7 +18,7 @@ import { loadSessionState, clearSessionState } from '../utils/storage';
 import { isWakeLockActive, isWakeLockSupported } from '../utils/wakeLock';
 import { playSpeechAnnouncement } from '../utils/audioManager';
 import { buildSessionMetadata } from '../utils/sessionSnapshot';
-import { getWorkoutExerciseSections } from '../utils/workoutStorage';
+import { getWorkoutExerciseSections } from '../utils/workoutExerciseSections';
 import { getSessionPhase, getSpeechMilestones } from '../utils/timerPhase';
 import './TimerScreen.css';
 

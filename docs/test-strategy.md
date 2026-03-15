@@ -8,7 +8,8 @@ Last updated: March 15, 2026
   - timer derivation and formatting (`src/utils/timerLogic.js`)
   - fixed timer-phase and speech-milestone policy (`src/utils/timerPhase.js`)
   - storage/migration contracts (`src/utils/workoutStorage.js`)
-  - cloud profile merge ordering contracts (`netlify/profileStore.js`)
+  - cloud profile merge ordering contracts, including section-level conflict handling (`netlify/profileStore.js`)
+  - client cloud profile hydrate/requeue contracts (`src/utils/cloudProfileSync.js`)
   - deterministic waveform geometry (`src/utils/ecgWaveform.js`)
   - session cadence and resume policy contracts (`src/utils/sessionPersistenceCadence.js`, `src/utils/sessionResumePolicy.js`)
 - Integration-focused unit tests (targeted additions):
@@ -93,7 +94,7 @@ Last updated: March 15, 2026
 ## Known Gaps
 
 - E2E currently covers one primary happy-path flow (Chromium only).
-- Cloud profile sync client behavior is still primarily validated manually (limited automated coverage on browser lifecycle events).
+- Cloud profile sync browser lifecycle events are still primarily validated manually.
 - No automated performance regression checks for persistence cadence.
 - Wake lock/audio behavior still depends on manual cross-device verification.
 - Hook-level timer lifecycle transitions still rely mostly on unit contracts and manual smoke (no dedicated hook test harness yet).

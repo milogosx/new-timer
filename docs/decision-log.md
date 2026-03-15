@@ -112,3 +112,21 @@ Last updated: March 15, 2026
 - Alternatives considered: leave the boundaries implicit until a broader Tier 3 refactor; move directly to a larger architectural split of `workoutStorage` and timer/session modules.
 - Consequence: The current subsystem boundaries are explicit in code without yet restructuring the larger modules. Profile-backed screens now refresh from a shared app-level revision signal, and timer restore/phase rules are defined by dedicated helpers.
 - Status: implemented
+
+### D-012
+
+- Date: 2026-03-15
+- Decision: Treat Tier 3 as the next pending wave that starts from the already-implemented cloud-sync durability baseline.
+- Context: D-007 and the current runtime already implement client-timestamp ordering, retry-on-failure writes, lifecycle flush handlers, and local-vs-remote boot winner selection, but the handoff wording still left Tier 3 sync scope easy to misread as entirely unstarted.
+- Alternatives considered: describe all sync durability work as still pending Tier 3 scope; reopen Tier 2 to absorb the remaining sync conflict-model work; reorder Tier 3 around storage decomposition first.
+- Consequence: Tier sequencing now matches the implemented runtime. The remaining Tier 3 work is limited to unresolved conflict-model remediation, `workoutStorage.js` hub decomposition, and deeper session-state consolidation.
+- Status: implemented
+
+### D-013
+
+- Date: 2026-03-15
+- Decision: Resolve cloud profile conflicts per section using `workoutsUpdatedAt`, `warmupsUpdatedAt`, and `cardiosUpdatedAt`.
+- Context: Whole-profile timestamp gating could drop a valid older patch for one section when another section had a newer overall profile timestamp.
+- Alternatives considered: keep whole-profile timestamp ordering only; always accept partial patches regardless of staleness; move immediately to a larger sync protocol rewrite.
+- Consequence: Unrelated section updates no longer clobber each other during cloud merges. Tier 3 sync work can now build on section-level conflict ordering instead of the previous whole-profile gate.
+- Status: implemented

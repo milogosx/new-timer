@@ -40,10 +40,13 @@ Completed:
 - Clarified fixed timer-phase behavior:
   - `src/utils/timerPhase.js` now defines the fixed 15-minute warm-up timing window and speech milestones.
 - Clarified workout/profile read boundaries:
-  - `src/utils/workoutStorage.js` now exposes screen-facing read models:
+  - Tier 2 centralized screen-facing read models in `src/utils/workoutStorage.js`:
     - `loadWorkoutLibraryData()`
     - `loadWorkoutAttachmentOptions()`
     - `getWorkoutExerciseSections()`
+  - Tier 3 has since split those read-only helpers into:
+    - `src/utils/workoutReadModels.js`
+    - `src/utils/workoutExerciseSections.js`
   - duplicated warm-up/cardio reference cleanup was consolidated inside `workoutStorage`.
 - Updated profile CRUD screens to notify App when canonical profile data changes.
 - Updated contract-bearing docs to reflect the stabilized boundaries.
@@ -62,6 +65,28 @@ Primary files touched in Tier 2:
 - `tests/sessionSnapshot.test.js`
 - `tests/sessionResumePolicy.test.js`
 - `tests/timerPhase.test.js`
+
+### Tier 3: Remaining Implementation Wave
+
+Status:
+- In progress.
+
+Current baseline already in place before Tier 3 work begins:
+- cloud profile sync already uses client-timestamp conflict ordering.
+- cloud profile sync already retries failed writes and flushes on `online`, `visibilitychange`, and `pagehide`.
+- boot hydration already keeps the newer local profile when local `updatedAt` is ahead of remote state.
+
+Completed in the current Tier 3 pass:
+- cloud profile sync conflict handling now compares section-level timestamps for `workouts`, `warmups`, and `cardios`.
+- an older patch for one section no longer gets dropped only because another section has a newer overall profile timestamp.
+- bootstrap hydration and keep-local requeue behavior now have automated coverage in `tests/cloudProfileSync.test.js`.
+- Timer exercise-section derivation moved out of `workoutStorage.js` into `src/utils/workoutExerciseSections.js`.
+- screen-facing workout library and attachment read models moved out of `workoutStorage.js` into `src/utils/workoutReadModels.js`.
+
+Remaining Tier 3 scope:
+- Cloud profile sync conflict-model remediation beyond the current section-level timestamp merge baseline above.
+- `workoutStorage.js` hub decomposition.
+- Deeper session-state structural consolidation.
 
 ## Current Stabilized Contracts
 
@@ -108,6 +133,8 @@ Current contract:
 
 Authoritative modules:
 - `src/utils/workoutStorage.js`
+- `src/utils/workoutReadModels.js`
+- `src/utils/workoutExerciseSections.js`
 - `src/utils/cloudProfileSync.js`
 - `src/App.jsx`
 
@@ -118,7 +145,7 @@ Current contract:
   - workout CRUD
   - warm-up CRUD
   - cardio CRUD
-- screens should prefer explicit read helpers from `workoutStorage` over reconstructing profile reads independently.
+- screens should prefer explicit read helpers from `workoutReadModels` and `workoutExerciseSections` over reconstructing profile reads independently.
 
 ## Current Validation Baseline
 
@@ -129,7 +156,7 @@ Most recent checks run successfully:
 
 ## Known Open Risks
 
-These remain active after Tier 1 and Tier 2:
+These remain active after Tier 1, Tier 2, and the current Tier 3 pass:
 - `R2`: Wake Lock variability across browsers/devices.
 - `R3`: Audio autoplay / visibility policy differences affecting countdown, bell, or speech behavior.
 - `R4`: Migration semantics ambiguity for canonical workouts.
@@ -153,6 +180,10 @@ Why this order:
 - sync behavior has the widest durability blast radius.
 - `workoutStorage.js` is still the largest high-coupling hotspot.
 - session-state structure is clearer now, so Tier 3 can refactor it from a stabilized contract instead of moving targets.
+
+Scope note:
+- Tier 3 starts from the implemented sync durability baseline documented above; it does not reopen the already-implemented timestamp ordering and lifecycle flush work.
+- Tier 3 sync work now includes a section-level merge baseline; remaining sync work should build from that behavior rather than replacing it with whole-profile timestamp gating.
 
 ## Suggested Next-Session Reading Order
 

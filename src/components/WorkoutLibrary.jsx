@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  loadWorkoutLibraryData,
   deleteWorkout,
   togglePinWorkout,
   resetAllWorkouts,
@@ -8,8 +7,8 @@ import {
   deleteCardio,
   resetAllWarmups,
   resetAllCardios,
-  sortWorkouts,
 } from '../utils/workoutStorage';
+import { loadWorkoutLibraryData, sortWorkouts } from '../utils/workoutReadModels';
 import './WorkoutLibrary.css';
 
 const TYPE_LABELS = {
