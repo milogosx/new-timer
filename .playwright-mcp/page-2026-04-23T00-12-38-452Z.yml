@@ -1,0 +1,19 @@
+- generic [ref=e85]:
+  - banner [ref=e86]:
+    - generic [ref=e87]:
+      - button "←" [ref=e88] [cursor=pointer]
+      - heading "TIMER ONLY" [level=1] [ref=e90]
+      - button "Mute sounds" [ref=e92] [cursor=pointer]:
+        - img [ref=e93]
+  - generic [ref=e99]:
+    - img
+    - generic:
+      - generic: ELAPSED
+      - generic: 00:00
+      - generic: REMAINING
+      - generic: 60:00
+  - generic [ref=e102]:
+    - button "START" [ref=e103] [cursor=pointer]:
+      - img [ref=e104]
+      - text: START
+    - button "RESET" [disabled] [ref=e106]

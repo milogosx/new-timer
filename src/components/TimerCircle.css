@@ -26,19 +26,13 @@
   -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
 
-/* Static conic gradient ring — cyan/pink palette */
 .timer-circle-border::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 0;
   border-radius: 50%;
-  background: conic-gradient(from 0deg,
-      #FF2D78,
-      #FF6B9D,
-      #00FFFF,
-      #FF2D78);
-  opacity: 0.32;
+  background: radial-gradient(circle at center, rgba(255,107,26,0.08) 0%, transparent 70%);
 }
 
 .progress-ring {
@@ -55,7 +49,6 @@
   /* No transition — static for battery efficiency */
 }
 
-/* Inner circle */
 .timer-circle-inner {
   position: relative;
   width: calc(100% - 12px);
@@ -66,26 +59,28 @@
   justify-content: center;
   transition: background-color 400ms ease-in-out;
   z-index: 3;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: none;
+  pointer-events: none;
 }
 
-/* Timer text */
 .timer-display {
-  font-family: var(--font-mono);
-  font-size: clamp(64px, 22vw, 96px);
-  font-weight: 800;
-  letter-spacing: 2px;
+  font-family: var(--font-digital);
+  font-size: clamp(54px, 18vw, 82px);
+  font-weight: 700;
+  letter-spacing: 1px;
   font-variant-numeric: tabular-nums;
   user-select: none;
   color: var(--text-primary);
+  text-shadow: 0 0 20px rgba(255, 107, 26, 0.3);
 }
 
-/* Countdown number */
 .countdown-number {
-  font-family: var(--font-display);
+  font-family: var(--font-digital);
   font-size: clamp(90px, 30vw, 140px);
-  font-weight: 900;
-  color: var(--text-primary);
+  font-weight: 800;
+  color: var(--amber);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 30px rgba(255, 107, 26, 0.6);
 }
 
 /* Keep size consistent between browser and PWA so controls stay comfortably sized. */
@@ -99,4 +94,12 @@
 .is-pwa .timer-circle-wrapper {
   width: min(340px, 85vw);
   height: min(340px, 85vw);
+}
+
+@media (max-height: 860px) {
+  .timer-circle-wrapper {
+    width: min(308px, 78vw);
+    height: min(308px, 78vw);
+    margin: var(--space-2) auto;
+  }
 }

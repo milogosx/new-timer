@@ -1,0 +1,71 @@
+- generic [ref=e80]:
+  - banner [ref=e81]:
+    - button "←" [ref=e82] [cursor=pointer]
+    - heading "MANAGE WORKOUTS" [level=1] [ref=e83]
+  - button "+ CREATE NEW WORKOUT" [ref=e84] [cursor=pointer]
+  - generic [ref=e85]:
+    - generic [ref=e86]:
+      - generic [ref=e87]:
+        - generic [ref=e88]:
+          - heading "Foundation & Flow" [level=3] [ref=e89]
+          - generic [ref=e90]:
+            - text: 5 exercises
+            - generic [ref=e91]: STRENGTH
+        - generic [ref=e92]: PINNED
+      - generic [ref=e93]:
+        - button "UNPIN" [ref=e94] [cursor=pointer]
+        - button "EDIT" [ref=e95] [cursor=pointer]
+        - button "DELETE" [ref=e96] [cursor=pointer]
+    - generic [ref=e97]:
+      - generic [ref=e99]:
+        - heading "The Power Pull" [level=3] [ref=e100]
+        - generic [ref=e101]:
+          - text: 6 exercises
+          - generic [ref=e102]: STRENGTH
+      - generic [ref=e103]:
+        - button "PIN TOP" [ref=e104] [cursor=pointer]
+        - button "EDIT" [ref=e105] [cursor=pointer]
+        - button "DELETE" [ref=e106] [cursor=pointer]
+    - generic [ref=e107]:
+      - generic [ref=e109]:
+        - heading "Full Body Volume" [level=3] [ref=e110]
+        - generic [ref=e111]:
+          - text: 6 exercises
+          - generic [ref=e112]: STRENGTH
+      - generic [ref=e113]:
+        - button "PIN TOP" [ref=e114] [cursor=pointer]
+        - button "EDIT" [ref=e115] [cursor=pointer]
+        - button "DELETE" [ref=e116] [cursor=pointer]
+    - generic [ref=e117]:
+      - generic [ref=e119]:
+        - heading "The Engine" [level=3] [ref=e120]
+        - generic [ref=e121]:
+          - text: 2 exercises
+          - generic [ref=e122]: CARDIO
+      - generic [ref=e123]:
+        - button "PIN TOP" [ref=e124] [cursor=pointer]
+        - button "EDIT" [ref=e125] [cursor=pointer]
+        - button "DELETE" [ref=e126] [cursor=pointer]
+  - generic [ref=e128]: WARM-UPS
+  - button "+ CREATE NEW WARM-UP" [ref=e129] [cursor=pointer]
+  - generic [ref=e131]:
+    - generic [ref=e133]:
+      - heading "Dynamic Primer" [level=3] [ref=e134]
+      - generic [ref=e135]:
+        - text: 7 exercises
+        - generic [ref=e136]: WARM-UP
+    - generic [ref=e137]:
+      - button "EDIT" [ref=e138] [cursor=pointer]
+      - button "DELETE" [ref=e139] [cursor=pointer]
+  - generic [ref=e141]: CARDIO
+  - button "+ CREATE NEW CARDIO" [ref=e142] [cursor=pointer]
+  - generic [ref=e144]:
+    - generic [ref=e146]:
+      - heading "Steady State Cardio" [level=3] [ref=e147]
+      - generic [ref=e148]:
+        - text: 3 exercises
+        - generic [ref=e149]: CARDIO
+    - generic [ref=e150]:
+      - button "EDIT" [ref=e151] [cursor=pointer]
+      - button "DELETE" [ref=e152] [cursor=pointer]
+  - button "RESET ALL DATA" [ref=e153] [cursor=pointer]

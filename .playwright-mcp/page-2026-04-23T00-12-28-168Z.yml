@@ -1,0 +1,46 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - button "Settings" [ref=e6] [cursor=pointer]:
+      - img [ref=e7]
+    - generic [ref=e10]: ELITE RECOMPOSITION
+    - generic [ref=e11]:
+      - img [ref=e12]
+      - generic [ref=e18]:
+        - generic [ref=e19]: WORKOUT
+        - generic [ref=e20]: TIMER
+  - generic [ref=e21]:
+    - generic [ref=e22]:
+      - heading "YOUR WORKOUTS" [level=2] [ref=e23]
+      - button "EDIT" [ref=e24] [cursor=pointer]
+    - generic [ref=e25]:
+      - button "Foundation & Flow STRENGTH" [ref=e26] [cursor=pointer]:
+        - img [ref=e28]
+        - generic [ref=e31]: Foundation & Flow
+        - generic [ref=e32]: STRENGTH
+        - img [ref=e34]
+      - button "The Power Pull STRENGTH" [ref=e36] [cursor=pointer]:
+        - img [ref=e38]
+        - generic [ref=e40]: The Power Pull
+        - generic [ref=e41]: STRENGTH
+        - img [ref=e43]
+      - button "Full Body Volume STRENGTH" [ref=e45] [cursor=pointer]:
+        - img [ref=e47]
+        - generic [ref=e48]: Full Body Volume
+        - generic [ref=e49]: STRENGTH
+        - img [ref=e51]
+      - button "The Engine CARDIO" [ref=e53] [cursor=pointer]:
+        - img [ref=e55]
+        - generic [ref=e58]: The Engine
+        - generic [ref=e59]: CARDIO
+        - img [ref=e61]
+    - button "+ CREATE NEW WORKOUT" [ref=e63] [cursor=pointer]
+    - button "TIMER ONLY 60 MIN · 30 SEC" [ref=e64] [cursor=pointer]:
+      - img [ref=e66]
+      - generic [ref=e69]: TIMER ONLY
+      - generic [ref=e70]: 60 MIN · 30 SEC
+      - img [ref=e72]
+    - button "SESSION WORKOUT · 60 MIN · 30 SEC" [ref=e75] [cursor=pointer]:
+      - img [ref=e77]
+      - generic [ref=e80]: SESSION
+      - generic [ref=e81]: WORKOUT · 60 MIN · 30 SEC
+      - img [ref=e83]

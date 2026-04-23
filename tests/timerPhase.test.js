@@ -4,6 +4,7 @@ import {
   FIXED_WARMUP_PHASE_DURATION_SEC,
   getSessionPhase,
   getSpeechMilestones,
+  shouldPlaySpeechCues,
 } from '../src/utils/timerPhase.js';
 
 test('getSessionPhase uses a fixed warm-up timing window capped by total session length', () => {
@@ -61,4 +62,10 @@ test('getSpeechMilestones uses the same fixed warm-up boundary for announcement 
   });
   assert.equal(shortSessionMilestones.at(-1)?.key, 'workout_complete');
   assert.equal(shortSessionMilestones.at(-1)?.at, 600);
+});
+
+test('shouldPlaySpeechCues only enables announcements for workout-backed sessions', () => {
+  assert.equal(shouldPlaySpeechCues(null), false);
+  assert.equal(shouldPlaySpeechCues(undefined), false);
+  assert.equal(shouldPlaySpeechCues({ id: 'workout-1' }), true);
 });

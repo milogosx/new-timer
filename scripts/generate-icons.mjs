@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = resolve(__dirname, '..', 'public');
+const iosAppIconDir = resolve(__dirname, '..', 'ios', 'App', 'App', 'Assets.xcassets', 'AppIcon.appiconset');
 const svgBuffer = readFileSync(resolve(publicDir, 'icon.svg'));
 
 const icons = [
@@ -30,3 +31,10 @@ await sharp(svgBuffer)
   .toFile(resolve(publicDir, 'favicon.png'));
 
 console.log('All icons generated!');
+
+await sharp(svgBuffer)
+  .resize(1024, 1024)
+  .png()
+  .toFile(resolve(iosAppIconDir, 'AppIcon-512@2x.png'));
+
+console.log('Generated native iOS app icon (1024x1024)');

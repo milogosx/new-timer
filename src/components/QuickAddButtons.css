@@ -1,18 +1,69 @@
-.quick-add-section {
-  width: 100%;
+.quick-add-inline {
+  position: relative;
+  flex: 0 0 32px;
+  width: 32px;
+}
+
+.quick-add-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.quick-add-trigger {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease, filter 0.15s ease, opacity 0.15s ease;
+}
+
+.quick-add-trigger:active:not(:disabled) {
+  filter: brightness(1.18);
+}
+
+.quick-add-trigger:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.quick-add-trigger.is-open {
+  color: var(--text-primary);
+}
+
+.quick-add-panel {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 10px);
+  width: 248px;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(18, 18, 28, 0.96);
+  box-shadow: var(--shadow-lg);
+  z-index: 25;
 }
 
 .quick-add-buttons {
-  display: flex;
-  gap: var(--space-1);
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
   margin-bottom: 0;
 }
 
 .quick-add-btn {
-  flex: 1;
   min-width: 0;
-  height: 44px;
+  min-height: 48px;
   background: var(--surface-elevated);
   color: var(--text-primary);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -44,10 +95,18 @@
 
 /* Custom time input */
 .custom-time-form {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 126px);
   display: flex;
   gap: var(--space-2);
-  padding: 0 var(--space-2);
-  margin-bottom: var(--space-3);
+  width: 248px;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(18, 18, 28, 0.98);
+  box-shadow: var(--shadow-lg);
+  z-index: 26;
 }
 
 .custom-time-input {
@@ -92,4 +151,22 @@
 .custom-time-submit:active {
   transform: scale(0.96);
   box-shadow: var(--shadow-pressed);
+}
+
+@media (max-width: 390px) {
+  .quick-add-inline {
+    flex-basis: 30px;
+    width: 30px;
+  }
+
+  .quick-add-trigger {
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
+  }
+
+  .quick-add-panel,
+  .custom-time-form {
+    width: 236px;
+  }
 }

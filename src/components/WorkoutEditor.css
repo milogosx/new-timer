@@ -26,14 +26,14 @@
 .editor-save-btn {
   width: 44px;
   height: 44px;
-  background: var(--green);
-  color: var(--text-on-green);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, #FF8C3F 0%, #CC4E0A 100%);
+  color: #fff;
+  border: 1px solid rgba(255, 107, 26, 0.5);
   border-radius: var(--radius-lg);
   font-size: var(--text-xl);
-  font-weight: 900;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: var(--shadow-md), 0 0 16px rgba(0, 230, 118, 0.2);
+  box-shadow: 0 0 20px rgba(255, 107, 26, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transition: var(--ease-press);
   flex-shrink: 0;
 }
@@ -43,14 +43,18 @@
   box-shadow: var(--shadow-pressed);
 }
 
-/* Sections */
 .editor-section {
-  background: var(--surface-card);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #1A1D24 0%, #0F1116 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 3px solid var(--amber);
+  border-radius: 14px;
   padding: var(--space-5) var(--space-4);
   margin-bottom: var(--space-4);
-  box-shadow: var(--shadow-md), var(--shadow-inset);
+  box-shadow: var(--shadow-md);
+}
+
+.editor-section-neutral {
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .editor-section-title {
@@ -126,10 +130,10 @@
 }
 
 .editor-type-active {
-  background: var(--pink);
-  color: var(--text-on-dark);
-  border-color: rgba(255, 45, 120, 0.3);
-  box-shadow: 0 0 14px rgba(255, 45, 120, 0.2);
+  background: transparent;
+  color: var(--amber);
+  border-color: var(--amber);
+  box-shadow: 0 0 14px rgba(255, 107, 26, 0.3);
 }
 
 /* Exercise Card */
@@ -186,12 +190,12 @@
 .editor-remove-btn {
   width: var(--space-8);
   height: var(--space-8);
-  border: 1px solid rgba(255, 45, 120, 0.3);
+  border: 1px solid rgba(229, 115, 115, 0.35);
   border-radius: var(--radius-sm);
-  background: var(--pink);
-  color: var(--text-on-pink);
+  background: transparent;
+  color: #E57373;
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -360,10 +364,10 @@
 }
 
 .editor-warmup-chip-active {
-  background: var(--green);
-  color: var(--text-on-green);
-  border-color: var(--green-dark);
-  box-shadow: 0 0 18px rgba(0, 230, 118, 0.25);
+  background: rgba(232, 134, 90, 0.1);
+  color: var(--text-primary);
+  border-color: var(--pink);
+  box-shadow: none;
 }
 
 .editor-warmup-chip-check {

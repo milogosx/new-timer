@@ -79,8 +79,35 @@ async function runSmokeFlow() {
     await page.locator('.timer-screen').waitFor({ state: 'visible' });
     const mainButton = page.locator('.ctrl-btn-main');
     const resetButton = page.locator('.ctrl-btn-reset');
+    const countdownNumber = page.locator('.countdown-number');
+    const timerDisplay = page.locator('.timer-display');
 
     await mainButton.click();
+    await page.waitForFunction(() => {
+      const btn = document.querySelector('.ctrl-btn-main');
+      const countdown = document.querySelector('.countdown-number');
+      const timerDisplayEl = document.querySelector('.timer-display');
+      return btn
+        && btn.textContent
+        && btn.textContent.trim() === 'STARTING...'
+        && countdown
+        && countdown.textContent
+        && countdown.textContent.trim() === '3'
+        && !timerDisplayEl;
+    }, { timeout: 5_000 });
+
+    await page.waitForFunction(() => {
+      const countdown = document.querySelector('.countdown-number');
+      return countdown && countdown.textContent && countdown.textContent.trim() === '2';
+    }, { timeout: 2_500 });
+
+    await page.waitForFunction(() => {
+      const countdown = document.querySelector('.countdown-number');
+      return countdown && countdown.textContent && countdown.textContent.trim() === '1';
+    }, { timeout: 2_500 });
+
+    await countdownNumber.waitFor({ state: 'detached', timeout: 3_000 });
+    await timerDisplay.waitFor({ state: 'visible', timeout: 3_000 });
     await page.waitForFunction(() => {
       const btn = document.querySelector('.ctrl-btn-main');
       return btn && btn.textContent && btn.textContent.trim() === 'PAUSE';

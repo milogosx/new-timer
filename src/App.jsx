@@ -5,9 +5,10 @@ import WorkoutLibrary from './components/WorkoutLibrary';
 import WorkoutEditor from './components/WorkoutEditor';
 import WarmupEditor from './components/WarmupEditor';
 import CardioEditor from './components/CardioEditor';
-import { initAudio } from './utils/audioManager';
 import { bindCloudSyncLifecycle, bootstrapCloudProfile } from './utils/cloudProfileSync';
+import { getIntervalRuntimeCapabilities, initializeIntervalRuntime } from './platform/intervalRuntimeBridge';
 import { SCREENS, EDITOR_RETURN } from './constants/appState';
+import { logBuildInfoOnce } from './config/buildInfo';
 import './App.css';
 
 function App() {
@@ -57,7 +58,7 @@ function App() {
     const handleFirstInteraction = () => {
       if (hasHandledFirstInteraction) return;
       hasHandledFirstInteraction = true;
-      initAudio();
+      void initializeIntervalRuntime();
       removeListeners();
     };
 
@@ -75,13 +76,21 @@ function App() {
   }, []);
 
   useEffect(() => {
+    logBuildInfoOnce();
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     bindCloudSyncLifecycle();
 
     async function initializeCloudProfile() {
+      const capabilities = getIntervalRuntimeCapabilities();
       const result = await bootstrapCloudProfile();
       if (!cancelled && result?.status === 'hydrated') {
         setProfileRevision((previous) => previous + 1);
+      }
+      if (!cancelled && capabilities.nativeShell) {
+        document.documentElement.classList.add('is-native-shell');
       }
     }
 

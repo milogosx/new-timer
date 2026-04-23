@@ -8,10 +8,18 @@ import {
 } from '../src/utils/cloudProfileSync.js';
 
 const WORKOUTS_KEY = 'eliteTimer_workouts';
+const WARMUPS_KEY = 'eliteTimer_warmups';
+const CARDIOS_KEY = 'eliteTimer_cardios';
 const WORKOUTS_SCHEMA_KEY = 'eliteTimer_workouts_schema';
+const WARMUPS_SCHEMA_KEY = 'eliteTimer_warmups_schema';
+const CARDIOS_SCHEMA_KEY = 'eliteTimer_cardios_schema';
 const WORKOUTS_UPDATED_AT_KEY = 'eliteTimer_workouts_updated_at';
+const WARMUPS_UPDATED_AT_KEY = 'eliteTimer_warmups_updated_at';
+const CARDIOS_UPDATED_AT_KEY = 'eliteTimer_cardios_updated_at';
 const PROFILE_UPDATED_AT_KEY = 'eliteTimer_profile_updated_at';
 const DELETED_DEFAULT_WORKOUT_IDS_KEY = 'eliteTimer_deletedDefaultWorkoutIds';
+const DELETED_DEFAULT_WARMUP_IDS_KEY = 'eliteTimer_deletedDefaultWarmupIds';
+const DELETED_DEFAULT_CARDIO_IDS_KEY = 'eliteTimer_deletedDefaultCardioIds';
 
 function createMemoryStorage() {
   const data = new Map();
@@ -190,4 +198,70 @@ test('queueCloudProfileSync writes section timestamps only for touched sections'
   assert.equal(patch.workoutsUpdatedAt, patch.clientUpdatedAt);
   assert.equal(patch.warmupsUpdatedAt, undefined);
   assert.equal(patch.cardiosUpdatedAt, undefined);
+});
+
+test('bootstrapCloudProfile keeps deleted default warmups and cardios from being rehydrated', async () => {
+  globalThis.localStorage.setItem(
+    DELETED_DEFAULT_WARMUP_IDS_KEY,
+    JSON.stringify(['default-dynamic-primer'])
+  );
+  globalThis.localStorage.setItem(
+    DELETED_DEFAULT_CARDIO_IDS_KEY,
+    JSON.stringify(['default-steady-state'])
+  );
+
+  globalThis.fetch = async () => ({
+    ok: true,
+    async json() {
+      return {
+        profile: {
+          warmups: [
+            { id: 'default-dynamic-primer', name: 'Remote Primer' },
+            { id: 'custom-warmup', name: 'Custom Warmup' },
+          ],
+          warmupsSchemaVersion: 2,
+          warmupsUpdatedAt: 550,
+          cardios: [
+            { id: 'default-steady-state', name: 'Remote Cardio' },
+            { id: 'custom-cardio', name: 'Custom Cardio' },
+          ],
+          cardiosSchemaVersion: 1,
+          cardiosUpdatedAt: 560,
+          updatedAt: 600,
+        },
+      };
+    },
+  });
+
+  const result = await bootstrapCloudProfile();
+
+  assert.deepEqual(result, { status: 'hydrated' });
+  assert.deepEqual(
+    JSON.parse(globalThis.localStorage.getItem(WARMUPS_KEY)),
+    [{ id: 'custom-warmup', name: 'Custom Warmup' }]
+  );
+  assert.deepEqual(
+    JSON.parse(globalThis.localStorage.getItem(CARDIOS_KEY)),
+    [{ id: 'custom-cardio', name: 'Custom Cardio' }]
+  );
+  assert.equal(globalThis.localStorage.getItem(WARMUPS_SCHEMA_KEY), '2');
+  assert.equal(globalThis.localStorage.getItem(CARDIOS_SCHEMA_KEY), '1');
+  assert.equal(globalThis.localStorage.getItem(WARMUPS_UPDATED_AT_KEY), '600');
+  assert.equal(globalThis.localStorage.getItem(CARDIOS_UPDATED_AT_KEY), '600');
+  assert.equal(globalThis.localStorage.getItem(PROFILE_UPDATED_AT_KEY), '600');
+  assert.deepEqual(
+    JSON.parse(globalThis.localStorage.getItem(DELETED_DEFAULT_WARMUP_IDS_KEY)),
+    ['default-dynamic-primer']
+  );
+  assert.deepEqual(
+    JSON.parse(globalThis.localStorage.getItem(DELETED_DEFAULT_CARDIO_IDS_KEY)),
+    ['default-steady-state']
+  );
+  assert.equal(globalThis.localStorage.getItem(WORKOUTS_KEY), null);
+  assert.equal(globalThis.localStorage.getItem(WORKOUTS_SCHEMA_KEY), null);
+  assert.equal(globalThis.localStorage.getItem(WORKOUTS_UPDATED_AT_KEY), '600');
+  assert.deepEqual(
+    JSON.parse(globalThis.localStorage.getItem(DELETED_DEFAULT_WORKOUT_IDS_KEY)),
+    []
+  );
 });

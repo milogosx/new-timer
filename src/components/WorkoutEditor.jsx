@@ -110,7 +110,7 @@ export default function WorkoutEditor({ workout, onProfileChanged, onSave, onCan
       </header>
 
       {/* Workout Info */}
-      <div className="editor-section">
+      <div className="editor-section editor-section-neutral">
         <label className="editor-label">WORKOUT NAME</label>
         <input
           type="text"

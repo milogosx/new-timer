@@ -1,10 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  deleteCardio,
+  deleteWarmup,
   deleteWorkout,
   loadCardios,
   loadWarmups,
   loadWorkouts,
+  resetAllCardios,
+  resetAllWarmups,
   resetAllWorkouts,
 } from '../src/utils/workoutStorage.js';
 
@@ -14,6 +18,8 @@ const CARDIOS_KEY = 'eliteTimer_cardios';
 const WORKOUTS_SCHEMA_KEY = 'eliteTimer_workouts_schema';
 const WARMUPS_SCHEMA_KEY = 'eliteTimer_warmups_schema';
 const CARDIOS_SCHEMA_KEY = 'eliteTimer_cardios_schema';
+const DELETED_DEFAULT_WARMUP_IDS_KEY = 'eliteTimer_deletedDefaultWarmupIds';
+const DELETED_DEFAULT_CARDIO_IDS_KEY = 'eliteTimer_deletedDefaultCardioIds';
 
 function createMemoryStorage() {
   const data = new Map();
@@ -222,4 +228,52 @@ test('deleteWorkout persists deletion for canonical defaults and reset restores 
 
   const afterReset = loadWorkouts();
   assert.ok(afterReset.some((workout) => workout.id === 'default-engine'));
+});
+
+test('deleteWarmup removes canonical warmups from library and attached workouts', () => {
+  const beforeDelete = loadWorkouts();
+  assert.ok(beforeDelete.some((workout) => workout.warmupIds?.includes('default-dynamic-primer')));
+
+  deleteWarmup('default-dynamic-primer');
+
+  const afterDeleteWarmups = loadWarmups();
+  const afterDeleteWorkouts = loadWorkouts();
+
+  assert.ok(!afterDeleteWarmups.some((warmup) => warmup.id === 'default-dynamic-primer'));
+  assert.ok(
+    afterDeleteWorkouts.every((workout) => !workout.warmupIds?.includes('default-dynamic-primer'))
+  );
+  assert.deepEqual(
+    JSON.parse(localStorage.getItem(DELETED_DEFAULT_WARMUP_IDS_KEY)),
+    ['default-dynamic-primer']
+  );
+
+  resetAllWarmups();
+
+  const afterResetWarmups = loadWarmups();
+  assert.ok(afterResetWarmups.some((warmup) => warmup.id === 'default-dynamic-primer'));
+});
+
+test('deleteCardio removes canonical cardios from library and attached workouts', () => {
+  const beforeDelete = loadWorkouts();
+  assert.ok(beforeDelete.some((workout) => workout.cardioIds?.includes('default-steady-state')));
+
+  deleteCardio('default-steady-state');
+
+  const afterDeleteCardios = loadCardios();
+  const afterDeleteWorkouts = loadWorkouts();
+
+  assert.ok(!afterDeleteCardios.some((cardio) => cardio.id === 'default-steady-state'));
+  assert.ok(
+    afterDeleteWorkouts.every((workout) => !workout.cardioIds?.includes('default-steady-state'))
+  );
+  assert.deepEqual(
+    JSON.parse(localStorage.getItem(DELETED_DEFAULT_CARDIO_IDS_KEY)),
+    ['default-steady-state']
+  );
+
+  resetAllCardios();
+
+  const afterResetCardios = loadCardios();
+  assert.ok(afterResetCardios.some((cardio) => cardio.id === 'default-steady-state'));
 });

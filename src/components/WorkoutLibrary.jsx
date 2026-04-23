@@ -19,6 +19,26 @@ const TYPE_LABELS = {
   other: 'OTHER',
 };
 
+function libIconFor(workout) {
+  const name = (workout.name || '').toLowerCase();
+  const common = { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
+  if (workout.type === 'cardio' || /engine|run|row|bike|cycle/.test(name)) {
+    return <svg {...common}><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/><path d="M8 12h2l1.5-2 1 3 1.5-2H16"/></svg>;
+  }
+  if (/pull|push|power|bolt|hiit|snatch|clean|jerk/.test(name) || workout.type === 'hiit') {
+    return <svg {...common}><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>;
+  }
+  if (/flow|mobility|stretch|prime|yoga/.test(name) || workout.type === 'mobility') {
+    return <svg {...common}><path d="M3 10c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M3 16c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/></svg>;
+  }
+  return <svg {...common}><line x1="6" y1="19" x2="6" y2="11"/><line x1="12" y1="19" x2="12" y2="6"/><line x1="18" y1="19" x2="18" y2="14"/></svg>;
+}
+
+function stopwatchIcon() {
+  const common = { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
+  return <svg {...common}><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9v4.5l2.5 2"/><path d="M9 3h6"/><path d="M19 5l1 1"/></svg>;
+}
+
 export default function WorkoutLibrary({
   onBack,
   onEdit,
@@ -107,7 +127,10 @@ export default function WorkoutLibrary({
     <div className="workout-library">
       <header className="lib-header">
         <button className="back-btn" onClick={onBack}>←</button>
-        <h1 className="lib-title">MANAGE WORKOUTS</h1>
+        <div className="lib-title-stack">
+          <span className="lib-title-kicker">MANAGE</span>
+          <h1 className="lib-title">WORKOUTS</h1>
+        </div>
         <div style={{ width: 44 }} />
       </header>
 
@@ -119,10 +142,11 @@ export default function WorkoutLibrary({
         {workouts.map((workout) => (
           <div key={workout.id} className={`lib-card ${workout.pinned ? 'lib-card-pinned' : ''}`}>
             <div className="lib-card-header">
+              <span className="lib-card-icon">{libIconFor(workout)}</span>
               <div className="lib-card-info">
                 <h3 className="lib-card-name">{workout.name}</h3>
                 <span className="lib-card-meta">
-                  {workout.exercises.length} exercises
+                  <span className="lib-card-count">{String(workout.exercises.length).padStart(2, '0')} EXERCISES</span>
                   <span className="lib-card-type-badge">
                     {TYPE_LABELS[workout.type] || 'OTHER'}
                   </span>
@@ -173,10 +197,11 @@ export default function WorkoutLibrary({
         {warmups.map((warmup) => (
           <div key={warmup.id} className="lib-card lib-card-warmup">
             <div className="lib-card-header">
+              <span className="lib-card-icon">{stopwatchIcon()}</span>
               <div className="lib-card-info">
                 <h3 className="lib-card-name">{warmup.name}</h3>
                 <span className="lib-card-meta">
-                  {warmup.exercises.length} exercises
+                  <span className="lib-card-count">{String(warmup.exercises.length).padStart(2, '0')} EXERCISES</span>
                   <span className="lib-card-type-badge lib-warmup-type-badge">WARM-UP</span>
                 </span>
               </div>
@@ -218,11 +243,12 @@ export default function WorkoutLibrary({
         {cardios.map((cardio) => (
           <div key={cardio.id} className="lib-card lib-card-warmup">
             <div className="lib-card-header">
+              <span className="lib-card-icon">{libIconFor({ name: cardio.name, type: 'cardio' })}</span>
               <div className="lib-card-info">
                 <h3 className="lib-card-name">{cardio.name}</h3>
                 <span className="lib-card-meta">
-                  {cardio.exercises.length} exercises
-                  <span className="lib-card-type-badge lib-warmup-type-badge" style={{ background: 'var(--cardio-accent)', color: 'var(--black)' }}>CARDIO</span>
+                  <span className="lib-card-count">{String(cardio.exercises.length).padStart(2, '0')} EXERCISES</span>
+                  <span className="lib-card-type-badge">CARDIO</span>
                 </span>
               </div>
             </div>

@@ -1,65 +1,246 @@
 let audioContext = null;
 let bellBuffer = null;
 let initialized = false;
+let bellBufferIsAsset = false;
+let bellLoadPromise = null;
 
 let sfxGainNode = null;
 let visibilityListenerBound = false;
 let keepAliveIntervalId = null;
-// Voice Engine State
-const voiceBuffers = {};
+let keepAliveActive = false;
+let lastKeepAliveAt = 0;
+let nextPlaybackId = 0;
 
-function ensureAudioContext() {
-  if (initialized && audioContext) return true;
+const PLAYBACK_STALL_GRACE_MS = 2_000;
+const RESUME_ATTEMPT_TIMEOUT_MS = 250;
+const KEEPALIVE_INTERVAL_MS = 15_000;
+const KEEPALIVE_WATCHDOG_MS = 20_000;
+const activePlaybacks = new Map();
+const BELL_ASSET_PATH = '/audio/interval_bell.wav';
+
+import { STRUCTURAL_CUE_KEYS, SPEECH_ASSET_EXTENSION } from './speechCueCatalog.js';
+
+// Preload structural cues upfront on audio init; coaching cues lazy-load on demand
+// to avoid a ~12MB preload cost on web/PWA startup.
+const VOICE_FILES = STRUCTURAL_CUE_KEYS;
+
+const voiceBuffers = {};
+const voiceLoadPromises = {};
+let voicePreloadPromise = null;
+
+function disconnectNode(node) {
+  if (!node) return;
+  try {
+    node.disconnect();
+  } catch {
+    // ignore disconnect cleanup failures
+  }
+}
+
+function clearVoiceState() {
+  voicePreloadPromise = null;
+
+  Object.keys(voiceBuffers).forEach((key) => {
+    delete voiceBuffers[key];
+  });
+  Object.keys(voiceLoadPromises).forEach((key) => {
+    delete voiceLoadPromises[key];
+  });
+}
+
+function resetPlaybackTracking() {
+  activePlaybacks.clear();
+  nextPlaybackId = 0;
+}
+
+function resetAudioGraph({ preserveContext = false } = {}) {
+  initialized = false;
+  if (!preserveContext) {
+    audioContext = null;
+  }
+  bellBuffer = null;
+  bellBufferIsAsset = false;
+  bellLoadPromise = null;
+  disconnectNode(sfxGainNode);
+  sfxGainNode = null;
+  resetPlaybackTracking();
+  clearVoiceState();
+}
+
+function initializeAudioGraph(context) {
+  bellBuffer = generateBellBuffer(context);
+  bellBufferIsAsset = false;
+
+  sfxGainNode = context.createGain();
+  sfxGainNode.gain.value = 1;
+  sfxGainNode.connect(context.destination);
+
+  initialized = true;
+  void preloadBellBuffer(context);
+}
+
+async function preloadBellBuffer(context = audioContext) {
+  if (!context || bellBufferIsAsset) return bellBuffer;
+
+  if (!bellLoadPromise) {
+    const loadContext = context;
+    bellLoadPromise = fetch(BELL_ASSET_PATH)
+      .then((response) => response.arrayBuffer())
+      .then((arrayBuffer) => loadContext.decodeAudioData(arrayBuffer))
+      .then((decodedBuffer) => {
+        if (
+          decodedBuffer
+          && audioContext === loadContext
+          && loadContext.state !== 'closed'
+        ) {
+          bellBuffer = decodedBuffer;
+          bellBufferIsAsset = true;
+        }
+        return decodedBuffer;
+      })
+      .catch((err) => {
+        console.warn('Failed to load bell asset:', err);
+        return null;
+      })
+      .finally(() => {
+        bellLoadPromise = null;
+      });
+  }
+
+  return bellLoadPromise;
+}
+
+function registerPlayback(kind, durationMs) {
+  nextPlaybackId += 1;
+  const startedAt = Date.now();
+  const entry = {
+    id: `${kind}-${startedAt}-${nextPlaybackId}`,
+    expectedEndAt: startedAt + durationMs,
+  };
+  activePlaybacks.set(entry.id, entry);
+  return entry;
+}
+
+function finishPlayback(entry) {
+  if (!entry) return;
+  activePlaybacks.delete(entry.id);
+}
+
+function getStalledPlaybacks() {
+  const now = Date.now();
+  return Array.from(activePlaybacks.values()).filter((entry) => {
+    return now > entry.expectedEndAt + PLAYBACK_STALL_GRACE_MS;
+  });
+}
+
+async function closeAudioContext(contextToClose = audioContext) {
+  if (!contextToClose || contextToClose.state === 'closed') return;
 
   try {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    bellBuffer = generateBellBuffer(audioContext);
+    await contextToClose.close();
+  } catch (err) {
+    console.warn('AudioContext close failed:', err);
+  }
+}
 
-    sfxGainNode = audioContext.createGain();
-    sfxGainNode.gain.value = 1;
-    sfxGainNode.connect(audioContext.destination);
+async function rebuildAudioGraph({ preserveContext = Boolean(audioContext && audioContext.state !== 'closed') } = {}) {
+  if (preserveContext && audioContext && audioContext.state !== 'closed') {
+    const existingContext = audioContext;
+    resetAudioGraph({ preserveContext: true });
 
-    initialized = true;
+    try {
+      initializeAudioGraph(existingContext);
+      return;
+    } catch (err) {
+      console.warn('In-place audio graph rebuild failed:', err);
+      resetAudioGraph({ preserveContext: true });
+    }
+  }
 
-    if (audioContext.state === 'suspended') {
+  const contextToClose = audioContext;
+  resetAudioGraph();
+  await closeAudioContext(contextToClose);
+}
+
+function ensureAudioContext() {
+  if (initialized && audioContext && bellBuffer && sfxGainNode) return true;
+
+  try {
+    const needsNewContext = !audioContext || audioContext.state === 'closed';
+    if (needsNewContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    initializeAudioGraph(audioContext);
+
+    if (audioContext?.state === 'suspended') {
       audioContext.resume().catch(() => {});
     }
 
     return true;
   } catch (err) {
     console.error('Audio init failed:', err);
+    resetAudioGraph({ preserveContext: Boolean(audioContext && audioContext.state !== 'closed') });
     return false;
   }
 }
 
-/**
- * Await AudioContext resume — critical on iOS where the context gets suspended.
- * iOS also has an 'interrupted' state (triggered by phone calls, Siri, etc.)
- * that requires resume() to recover from.
- */
 async function ensureResumed() {
   if (!audioContext) return false;
-  if (audioContext.state !== 'running') {
-    try {
-      await audioContext.resume();
-    } catch (err) {
+  if (audioContext.state === 'running') return true;
+
+  try {
+    const resumePromise = Promise.resolve(audioContext.resume()).catch((err) => {
       console.warn('AudioContext resume failed:', err);
+      return null;
+    });
+    await Promise.race([
+      resumePromise,
+      new Promise((resolve) => setTimeout(resolve, RESUME_ATTEMPT_TIMEOUT_MS)),
+    ]);
+  } catch (err) {
+    console.warn('AudioContext resume failed:', err);
+    return false;
+  }
+
+  return audioContext.state === 'running';
+}
+
+export async function ensurePlaybackReady() {
+  const stalledPlaybacks = getStalledPlaybacks();
+  if (stalledPlaybacks.length > 0) {
+    await rebuildAudioGraph();
+  }
+
+  if (audioContext?.state === 'closed') {
+    resetAudioGraph();
+  }
+
+  if (!audioContext || !bellBuffer || !sfxGainNode) {
+    if (!ensureAudioContext()) {
       return false;
     }
   }
-  return audioContext.state === 'running';
+
+  let ready = await ensureResumed();
+  if (ready || audioContext?.state !== 'closed') {
+    return ready;
+  }
+
+  resetAudioGraph();
+  if (!ensureAudioContext()) {
+    return false;
+  }
+
+  ready = await ensureResumed();
+  return ready;
 }
 
 function bindVisibilityHandling() {
   if (visibilityListenerBound || typeof document === 'undefined') return;
 
-  document.addEventListener('visibilitychange', async () => {
-    if (!audioContext) return;
+  document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') return;
-
-    if (audioContext.state === 'suspended') {
-      await audioContext.resume();
-    }
+    void ensurePlaybackReady();
   });
 
   visibilityListenerBound = true;
@@ -69,35 +250,47 @@ export function initAudio() {
   const ready = ensureAudioContext();
   if (ready) {
     bindVisibilityHandling();
-    preloadVoices();
+    void preloadVoices();
   }
   return ready;
 }
 
+async function loadVoiceBuffer(name) {
+  if (voiceBuffers[name]) return voiceBuffers[name];
+  if (!audioContext) return null;
+  if (!voiceLoadPromises[name]) {
+    voiceLoadPromises[name] = fetch(`/audio/${name}.${SPEECH_ASSET_EXTENSION}`)
+      .then((response) => response.arrayBuffer())
+      .then((arrayBuffer) => {
+        if (!audioContext) {
+          throw new Error('AudioContext unavailable during voice decode');
+        }
+        return audioContext.decodeAudioData(arrayBuffer);
+      })
+      .then((buffer) => {
+        voiceBuffers[name] = buffer;
+        return buffer;
+      })
+      .catch((err) => {
+        console.warn(`Failed to preload voice: ${name}`, err);
+        delete voiceLoadPromises[name];
+        return null;
+      });
+  }
+
+  return voiceLoadPromises[name];
+}
+
 async function preloadVoices() {
   if (!audioContext) return;
-  const files = [
-    'start_warmup',
-    'warmup_complete',
-    'quarter_way',
-    'halfway',
-    'three_quarters',
-    'five_minutes',
-    'one_minute',
-    'workout_complete',
-  ];
-
-  await Promise.all(
-    files.map(async (name) => {
-      try {
-        const response = await fetch(`/audio/${name}.mp3`);
-        const arrayBuffer = await response.arrayBuffer();
-        voiceBuffers[name] = await audioContext.decodeAudioData(arrayBuffer);
-      } catch (err) {
-        console.warn(`Failed to preload voice: ${name}`, err);
-      }
-    })
-  );
+  if (!voicePreloadPromise) {
+    voicePreloadPromise = Promise.allSettled(
+      VOICE_FILES.map((name) => loadVoiceBuffer(name))
+    ).finally(() => {
+      voicePreloadPromise = null;
+    });
+  }
+  await voicePreloadPromise;
 }
 
 function generateBellBuffer(ctx) {
@@ -106,7 +299,6 @@ function generateBellBuffer(ctx) {
   const length = sampleRate * duration;
   const buffer = ctx.createBuffer(2, length, sampleRate);
 
-  // Glass Tap — Bright Shimmer: A7 base with sparkly high overtones
   for (let channel = 0; channel < 2; channel += 1) {
     const data = buffer.getChannelData(channel);
     for (let i = 0; i < length; i += 1) {
@@ -140,24 +332,60 @@ function generateBeepBuffer(ctx, frequency, duration) {
   return buffer;
 }
 
+function playBuffer(buffer, {
+  gain = 1,
+  playback = null,
+  onEnded = null,
+} = {}) {
+  if (!audioContext || !sfxGainNode) return false;
+
+  try {
+    const source = audioContext.createBufferSource();
+    const gainNode = audioContext.createGain();
+    gainNode.gain.value = gain;
+    source.buffer = buffer;
+    source.connect(gainNode);
+    gainNode.connect(sfxGainNode);
+    source.onended = () => {
+      disconnectNode(source);
+      disconnectNode(gainNode);
+      finishPlayback(playback);
+      if (typeof onEnded === 'function') {
+        onEnded();
+      }
+    };
+    source.start(0);
+    return true;
+  } catch (err) {
+    finishPlayback(playback);
+    if (typeof onEnded === 'function') {
+      onEnded();
+    }
+    console.warn('Audio playback failed:', err);
+    return false;
+  }
+}
+
+function playRecoveryTone() {
+  if (!audioContext) return false;
+  const buffer = generateBeepBuffer(audioContext, 1320, 0.16);
+  return playBuffer(buffer, { gain: 0.22 });
+}
+
 export async function playBell() {
+  if (!await ensurePlaybackReady()) return;
+  if (!bellBufferIsAsset) {
+    await preloadBellBuffer();
+  }
   if (!audioContext || !bellBuffer || !sfxGainNode) return;
 
-  await ensureResumed();
+  const playback = registerPlayback('bell', 1_200);
+  const started = playBuffer(bellBuffer, {
+    gain: 0.85,
+    playback,
+  });
+  if (!started) return;
 
-  const source = audioContext.createBufferSource();
-  const gainNode = audioContext.createGain();
-  gainNode.gain.value = 0.85;
-  source.buffer = bellBuffer;
-  source.connect(gainNode);
-  gainNode.connect(sfxGainNode);
-  source.onended = () => {
-    try { source.disconnect(); } catch { /* ignore disconnect cleanup failures */ }
-    try { gainNode.disconnect(); } catch { /* ignore disconnect cleanup failures */ }
-  };
-  source.start(0);
-
-  // Short vibration pulse for haptic feedback
   if (navigator.vibrate) {
     navigator.vibrate([30, 40, 30]);
   }
@@ -170,25 +398,20 @@ export async function playCountdown(onComplete) {
     }
   };
 
+  if (!await ensurePlaybackReady()) {
+    safeComplete();
+    return;
+  }
+
   if (!audioContext || !sfxGainNode) {
     safeComplete();
     return;
   }
 
-  try {
-    if (audioContext.state === 'suspended') {
-      await audioContext.resume();
-    }
-  } catch (err) {
-    console.warn('Audio resume failed in countdown:', err);
-  }
-
   const now = audioContext.currentTime;
-  const beepFrequencies = [880, 880, 880, 1760]; // 3 low beeps + 1 high
-  const startTimes = [0, 1, 2, 3]; // absolute seconds from now
+  const beepFrequencies = [880, 880, 880, 1760];
+  const startTimes = [0, 1, 2, 3];
 
-  // Schedule all beeps immediately using AudioContext time
-  // This is much more reliable than setTimeout on mobile
   for (let i = 0; i < 4; i += 1) {
     const buffer = generateBeepBuffer(
       audioContext,
@@ -204,21 +427,14 @@ export async function playCountdown(onComplete) {
       source.connect(gainNode);
       gainNode.connect(sfxGainNode);
       source.start(now + startTimes[i]);
-    } catch (e) {
-      console.warn('Failed to schedule beep:', e);
+    } catch (err) {
+      console.warn('Failed to schedule countdown beep:', err);
     }
   }
 
-  // Schedule callback exactly when the last beep finishes
-  // We use setTimeout here but the caller (useTimer) has a robust fallback loop now
   setTimeout(safeComplete, 3400);
 }
 
-/**
- * Request audio ducking via the Audio Session API.
- * Sets type to "transient" which tells iOS to lower other audio (e.g. Spotify).
- * Returns the previous type so it can be restored after playback.
- */
 function requestDucking() {
   if (!navigator.audioSession) return null;
   try {
@@ -240,42 +456,35 @@ function releaseDucking(prevType) {
 }
 
 export async function playSpeechAnnouncement(key) {
+  if (!await ensurePlaybackReady()) return;
   if (!audioContext || !sfxGainNode) return;
 
-  await ensureResumed();
-
-  const buffer = voiceBuffers[key];
+  const buffer = await loadVoiceBuffer(key);
   if (!buffer) {
     console.warn('Voice buffer not found for:', key);
     return;
   }
 
   const prevSessionType = requestDucking();
-
-  try {
-    const source = audioContext.createBufferSource();
-    const gainNode = audioContext.createGain();
-    gainNode.gain.value = 1.0;
-    source.buffer = buffer;
-    source.connect(gainNode);
-    gainNode.connect(sfxGainNode);
-    source.onended = () => {
-      try { source.disconnect(); } catch { /* ignore disconnect cleanup failures */ }
-      try { gainNode.disconnect(); } catch { /* ignore disconnect cleanup failures */ }
-      releaseDucking(prevSessionType);
-    };
-    source.start(0);
-  } catch (err) {
-    console.error('Speech playback failed:', err);
+  let duckingReleased = false;
+  const releaseSpeechDucking = () => {
+    if (duckingReleased) return;
+    duckingReleased = true;
     releaseDucking(prevSessionType);
+  };
+
+  const playback = registerPlayback('speech', Math.ceil(buffer.duration * 1000) + 2_000);
+  const started = playBuffer(buffer, {
+    gain: 1,
+    playback,
+    onEnded: releaseSpeechDucking,
+  });
+
+  if (!started) {
+    releaseSpeechDucking();
   }
 }
 
-/**
- * Play a near-silent buffer to keep the AudioContext alive on iOS.
- * iOS suspends inactive AudioContexts after ~15-30s of silence.
- * Also handles 'interrupted' state which iOS enters after phone calls, Siri, etc.
- */
 function playKeepAlive() {
   if (!audioContext || audioContext.state === 'closed') return;
   if (audioContext.state !== 'running') {
@@ -288,31 +497,28 @@ function playKeepAlive() {
     source.connect(audioContext.destination);
     source.start(0);
   } catch {
-    // Silently ignore — non-critical
+    // non-critical keepalive failure
   }
 }
 
-let keepAliveActive = false;
-let lastKeepAliveAt = 0;
+async function pulseKeepAlive() {
+  const ready = await ensurePlaybackReady();
+  if (!ready) return false;
 
-/**
- * Start keepalive loop. Call when a timer session starts.
- * Uses setInterval + a visibility-change watchdog. iOS can silently kill
- * setInterval when backgrounded; the watchdog detects this and restarts it
- * whenever the app returns to foreground.
- */
+  lastKeepAliveAt = Date.now();
+  playKeepAlive();
+  return true;
+}
+
 export function startAudioKeepAlive() {
   stopAudioKeepAlive();
   keepAliveActive = true;
-  lastKeepAliveAt = Date.now();
-  playKeepAlive();
+  void pulseKeepAlive();
   keepAliveIntervalId = setInterval(() => {
-    lastKeepAliveAt = Date.now();
-    playKeepAlive();
-  }, 15_000);
+    void pulseKeepAlive();
+  }, KEEPALIVE_INTERVAL_MS);
 }
 
-/** Stop keepalive loop. Call when a timer session ends. */
 export function stopAudioKeepAlive() {
   keepAliveActive = false;
   if (keepAliveIntervalId !== null) {
@@ -321,23 +527,40 @@ export function stopAudioKeepAlive() {
   }
 }
 
-/**
- * Watchdog: when app returns to foreground, check if the keepalive interval
- * is still alive. If it stopped (gap > 20s), restart it.
- */
 function keepAliveWatchdog() {
   if (!keepAliveActive) return;
   const gap = Date.now() - lastKeepAliveAt;
-  if (gap > 20_000) {
-    // setInterval was killed — restart
-    if (keepAliveIntervalId !== null) clearInterval(keepAliveIntervalId);
-    lastKeepAliveAt = Date.now();
-    playKeepAlive();
-    keepAliveIntervalId = setInterval(() => {
-      lastKeepAliveAt = Date.now();
-      playKeepAlive();
-    }, 15_000);
+  if (gap <= KEEPALIVE_WATCHDOG_MS) return;
+
+  if (keepAliveIntervalId !== null) {
+    clearInterval(keepAliveIntervalId);
   }
+  void pulseKeepAlive();
+  keepAliveIntervalId = setInterval(() => {
+    void pulseKeepAlive();
+  }, KEEPALIVE_INTERVAL_MS);
+}
+
+export async function manuallyRecoverAudio() {
+  if (!ensureAudioContext()) return false;
+
+  await rebuildAudioGraph();
+  if (!ensureAudioContext()) return false;
+
+  let ready = await ensureResumed();
+  if (!ready) {
+    const contextToClose = audioContext;
+    resetAudioGraph();
+    await closeAudioContext(contextToClose);
+    if (!ensureAudioContext()) return false;
+    ready = await ensureResumed();
+  }
+
+  if (!ready) return false;
+
+  void preloadVoices();
+  playRecoveryTone();
+  return true;
 }
 
 if (typeof document !== 'undefined') {

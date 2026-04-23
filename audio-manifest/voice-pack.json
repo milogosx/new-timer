@@ -1,0 +1,272 @@
+{
+  "_comment": "Transcript inventory for the Elite Recomposition Timer voice pack. Rendered with camilo-kokoro. Slug becomes the output filename (slug.wav). Structural cues use their existing runtime keys; coaching cues are numbered pool entries drawn randomly at runtime.",
+  "items": [
+    {
+      "slug": "start_warmup",
+      "text": "Welcome back, Camilo. Let's warm up. Set your intention. Let's build.",
+      "metadata": { "cue_type": "structural", "phase": "warmup" }
+    },
+    {
+      "slug": "warmup_complete",
+      "text": "Warm up complete! Time to lock in. Let's work.",
+      "metadata": { "cue_type": "structural", "phase": "transition" }
+    },
+    {
+      "slug": "quarter_way",
+      "text": "Quarter of the way there! Great pace. Keep that energy up!",
+      "metadata": { "cue_type": "structural", "phase": "workout" }
+    },
+    {
+      "slug": "halfway",
+      "text": "Halfway! This is where the real work begins. Don't drop your standards now!",
+      "metadata": { "cue_type": "structural", "phase": "workout" }
+    },
+    {
+      "slug": "three_quarters",
+      "text": "Three quarters done! Home stretch. Push through the burn. You've got this!",
+      "metadata": { "cue_type": "structural", "phase": "workout" }
+    },
+    {
+      "slug": "five_minutes",
+      "text": "Five minutes left! Empty the tank!",
+      "metadata": { "cue_type": "structural", "phase": "workout" }
+    },
+    {
+      "slug": "one_minute",
+      "text": "Final minute! Everything you've got. Leave nothing behind!",
+      "metadata": { "cue_type": "structural", "phase": "workout" }
+    },
+    {
+      "slug": "workout_complete",
+      "text": "Workout complete! Incredible work today, Camilo. Rest up. Come back stronger.",
+      "metadata": { "cue_type": "structural", "phase": "completion" }
+    },
+
+    {
+      "slug": "warmup_coach_01",
+      "text": "You showed up. That's the hardest part.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "intention" }
+    },
+    {
+      "slug": "warmup_coach_02",
+      "text": "Set your intention. What are you here for?",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "intention" }
+    },
+    {
+      "slug": "warmup_coach_03",
+      "text": "Leave the day behind. You're here now.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "intention" }
+    },
+    {
+      "slug": "warmup_coach_04",
+      "text": "Ease in. There's no rush yet.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "intention" }
+    },
+    {
+      "slug": "warmup_coach_05",
+      "text": "Build the focus before you build the effort.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "intention" }
+    },
+    {
+      "slug": "warmup_coach_06",
+      "text": "Deepen the breath. Wake the body up.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "breath" }
+    },
+    {
+      "slug": "warmup_coach_07",
+      "text": "Long inhale. Longer exhale.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "breath" }
+    },
+    {
+      "slug": "warmup_coach_08",
+      "text": "Feel where the body is tight. Breathe there.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "breath" }
+    },
+    {
+      "slug": "warmup_coach_09",
+      "text": "Let the blood move. Let the joints open.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "breath" }
+    },
+    {
+      "slug": "warmup_coach_10",
+      "text": "Move with purpose. No wasted reps.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "form" }
+    },
+    {
+      "slug": "warmup_coach_11",
+      "text": "Full range of motion. Don't shortcut it.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "form" }
+    },
+    {
+      "slug": "warmup_coach_12",
+      "text": "Feel the ground. Plant every step.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "form" }
+    },
+    {
+      "slug": "warmup_coach_13",
+      "text": "Warm the hips. Warm the shoulders. Warm the spine.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "form" }
+    },
+    {
+      "slug": "warmup_coach_14",
+      "text": "Quality reps now pay off later.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "build" }
+    },
+    {
+      "slug": "warmup_coach_15",
+      "text": "The warm up is the workout. Treat it that way.",
+      "metadata": { "cue_type": "coaching", "phase": "warmup", "category": "build" }
+    },
+
+    {
+      "slug": "workout_coach_01",
+      "text": "Lock in! Right here, right now!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "presence" }
+    },
+    {
+      "slug": "workout_coach_02",
+      "text": "Eyes forward! This moment is yours.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "presence" }
+    },
+    {
+      "slug": "workout_coach_03",
+      "text": "Come back to your breath. Stay with it.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "presence" }
+    },
+    {
+      "slug": "workout_coach_04",
+      "text": "Nothing else matters. Just the next rep.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "presence" }
+    },
+    {
+      "slug": "workout_coach_05",
+      "text": "Right here! Right now! Nothing else.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "presence" }
+    },
+    {
+      "slug": "workout_coach_06",
+      "text": "Phone down! Head up! Stay present.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "presence" }
+    },
+    {
+      "slug": "workout_coach_07",
+      "text": "No coasting! Find another gear.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "effort" }
+    },
+    {
+      "slug": "workout_coach_08",
+      "text": "Don't let the tempo slip!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "effort" }
+    },
+    {
+      "slug": "workout_coach_09",
+      "text": "Harder than yesterday! That's the whole point.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "effort" }
+    },
+    {
+      "slug": "workout_coach_10",
+      "text": "If it feels easy, it isn't working!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "effort" }
+    },
+    {
+      "slug": "workout_coach_11",
+      "text": "The work is in the reps you don't want to do.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "effort" }
+    },
+    {
+      "slug": "workout_coach_12",
+      "text": "Push the pace! You've got more!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "effort" }
+    },
+    {
+      "slug": "workout_coach_13",
+      "text": "Shoulders down! Chest up! Core tight!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "form" }
+    },
+    {
+      "slug": "workout_coach_14",
+      "text": "Breathe through it. Don't hold your breath.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "form" }
+    },
+    {
+      "slug": "workout_coach_15",
+      "text": "Steady breath. Steady mind.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "form" }
+    },
+    {
+      "slug": "workout_coach_16",
+      "text": "Feet planted! Body aligned!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "form" }
+    },
+    {
+      "slug": "workout_coach_17",
+      "text": "Slow the eccentric. Control every rep.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "form" }
+    },
+    {
+      "slug": "workout_coach_18",
+      "text": "Squeeze at the top! Own the movement!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "form" }
+    },
+    {
+      "slug": "workout_coach_19",
+      "text": "Remember why you showed up today.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "purpose" }
+    },
+    {
+      "slug": "workout_coach_20",
+      "text": "This is the version of you you're building.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "purpose" }
+    },
+    {
+      "slug": "workout_coach_21",
+      "text": "Future you is watching! Don't let them down!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "purpose" }
+    },
+    {
+      "slug": "workout_coach_22",
+      "text": "You chose this! Now finish it!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "purpose" }
+    },
+    {
+      "slug": "workout_coach_23",
+      "text": "Discipline is showing up when it's hard.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "purpose" }
+    },
+    {
+      "slug": "workout_coach_24",
+      "text": "You're doing the work! Keep going!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "affirmation" }
+    },
+    {
+      "slug": "workout_coach_25",
+      "text": "This is what progress feels like!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "affirmation" }
+    },
+    {
+      "slug": "workout_coach_26",
+      "text": "One more rep! Then another!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "affirmation" }
+    },
+    {
+      "slug": "workout_coach_27",
+      "text": "Trust the process. Trust the reps.",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "affirmation" }
+    },
+    {
+      "slug": "workout_coach_28",
+      "text": "Stay with it, Camilo!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "affirmation" }
+    },
+    {
+      "slug": "workout_coach_29",
+      "text": "You've got this, Camilo!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "affirmation" }
+    },
+    {
+      "slug": "workout_coach_30",
+      "text": "Keep building, Camilo!",
+      "metadata": { "cue_type": "coaching", "phase": "workout", "category": "affirmation" }
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import { resolveProfileSyncUrl } from '../config/runtimeConfig.js';
+
 const WORKOUTS_KEY = 'eliteTimer_workouts';
 const WARMUPS_KEY = 'eliteTimer_warmups';
 const CARDIOS_KEY = 'eliteTimer_cardios';
@@ -9,8 +11,6 @@ const DELETED_DEFAULT_WARMUP_IDS_KEY = 'eliteTimer_deletedDefaultWarmupIds';
 const DELETED_DEFAULT_CARDIO_IDS_KEY = 'eliteTimer_deletedDefaultCardioIds';
 const PROFILE_UPDATED_AT_KEY = 'eliteTimer_profile_updated_at';
 
-const CLOUD_READ_ENDPOINT = '/.netlify/functions/profile-read';
-const CLOUD_WRITE_ENDPOINT = '/.netlify/functions/profile-write';
 const CLOUD_REQUEST_TIMEOUT_MS = 2500;
 const CLOUD_WRITE_DEBOUNCE_MS = 450;
 const CLOUD_RETRY_DELAY_MS = 2000;
@@ -60,6 +60,14 @@ let pendingPatch = {};
 let flushTimerId = null;
 let flushInFlight = false;
 let lifecycleBound = false;
+
+function getCloudReadEndpoint() {
+  return resolveProfileSyncUrl('/.netlify/functions/profile-read');
+}
+
+function getCloudWriteEndpoint() {
+  return resolveProfileSyncUrl('/.netlify/functions/profile-write');
+}
 
 function isBrowserRuntime() {
   return typeof window !== 'undefined'
@@ -273,7 +281,7 @@ async function writePatchToCloud(patch) {
   }
 
   try {
-    const response = await fetchWithTimeout(CLOUD_WRITE_ENDPOINT, {
+    const response = await fetchWithTimeout(getCloudWriteEndpoint(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -385,7 +393,7 @@ export async function bootstrapCloudProfile() {
   if (!isBrowserRuntime()) return { status: 'skipped' };
 
   try {
-    const response = await fetchWithTimeout(CLOUD_READ_ENDPOINT, { method: 'GET' });
+    const response = await fetchWithTimeout(getCloudReadEndpoint(), { method: 'GET' });
     if (!response.ok) {
       if (response.status === 404 || response.status === 405) {
         cloudAvailability = 'unavailable';

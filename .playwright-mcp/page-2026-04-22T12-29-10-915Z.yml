@@ -1,0 +1,39 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e6]: Elite Recomposition
+    - heading "Workout Timer" [level=1] [ref=e7]
+  - generic [ref=e8]:
+    - generic [ref=e9]:
+      - heading "YOUR WORKOUTS" [level=2] [ref=e10]
+      - button "Manage Workouts" [ref=e11] [cursor=pointer]:
+        - img [ref=e12]
+    - generic [ref=e14]:
+      - button "★ Foundation & Flow STRENGTH" [ref=e15] [cursor=pointer]:
+        - generic [ref=e16]:
+          - generic [ref=e17]: ★
+          - generic [ref=e18]: Foundation & Flow
+          - generic [ref=e19]: STRENGTH
+      - button "The Power Pull STRENGTH" [ref=e20] [cursor=pointer]:
+        - generic [ref=e21]:
+          - generic [ref=e22]: The Power Pull
+          - generic [ref=e23]: STRENGTH
+      - button "Full Body Volume STRENGTH" [ref=e24] [cursor=pointer]:
+        - generic [ref=e25]:
+          - generic [ref=e26]: Full Body Volume
+          - generic [ref=e27]: STRENGTH
+      - button "The Engine CARDIO" [ref=e28] [cursor=pointer]:
+        - generic [ref=e29]:
+          - generic [ref=e30]: The Engine
+          - generic [ref=e31]: CARDIO
+    - button "+ CREATE NEW WORKOUT" [ref=e32] [cursor=pointer]
+    - button "TIMER ONLY 60min · 30sec" [ref=e33] [cursor=pointer]:
+      - generic [ref=e34]:
+        - img [ref=e35]
+        - text: TIMER ONLY
+      - generic [ref=e38]: 60min · 30sec
+    - button "SESSION WORKOUT · 60min · 30sec ▸" [ref=e40] [cursor=pointer]:
+      - generic [ref=e41]:
+        - img [ref=e42]
+        - text: SESSION
+      - generic [ref=e45]: WORKOUT · 60min · 30sec
+      - generic [ref=e46]: ▸

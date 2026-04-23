@@ -1,7 +1,7 @@
 # Elite Recomposition Timer
 
 Mobile-first workout timer app built with React + Vite.  
-It is client-first, with Netlify-backed profile sync for workouts/warm-ups/cardios and local fallback for session state and theme.
+It is client-first, with Netlify-backed profile sync for workouts/warm-ups/cardios and local fallback for session state and theme. The repo now also includes a Capacitor iPhone shell so interval cue delivery can move native on iPhone while the product surface stays React-driven.
 
 ## Purpose
 
@@ -33,7 +33,18 @@ npm test
 npm run test:e2e
 npm run build
 npm run preview
+npm run ios:sim-smoke
+npm run ios:sync
+npm run ios:open
+npm run ios:build
 ```
+
+Preferred validation workflow for UI changes:
+
+- treat the iPhone simulator as the default visual QA environment
+- use `npm run ios:sim-smoke` to validate the current bundled app, launch path, and screenshot artifact
+- use browser checks as a fast secondary loop, not the final source of truth for mobile UI polish
+- still use a physical iPhone for background audio, lock-screen behavior, bells, speech, and haptics
 
 ## Engineer Handoff Quickstart
 
@@ -49,6 +60,9 @@ First 30-60 minutes:
    - `npm test`
    - `npm run build`
    - `npm run test:e2e`
+7. If touching the iPhone shell or interval-runtime behavior, also read:
+   - `/Users/camiloperezsetright/Projects/new-timer/docs/hybrid-ios-local-runbook.md`
+   - `/Users/camiloperezsetright/Projects/new-timer/docs/plans/2026-03-19-hybrid-ios-migration-plan.md`
 
 Reusable process guide:
 
@@ -60,11 +74,13 @@ Entry points:
 
 - `src/main.jsx`: React mount (`StrictMode`).
 - `src/App.jsx`: top-level screen routing and shared app shell state.
+- `src/config/runtimeConfig.js`: runtime environment detection plus native-safe Netlify base URL resolution.
+- `src/platform/intervalRuntimeBridge.js`: swappable interval runtime boundary between web fallback and iPhone-native ownership.
 
 Primary layers:
 
 - `src/components/*`: screen and UI components.
-- `src/hooks/useTimer.js`: core timer state machine (countdown/running/paused/resume) with session persistence, wake lock, and audio keepalive integration.
+- `src/hooks/useTimer.js`: core timer state machine (countdown/running/paused/resume) with session persistence, wake lock, native-session reconciliation, and interval-runtime integration.
 - `src/utils/storage.js`: session and settings persistence.
 - `src/utils/workoutStorage.js`: workouts/warm-ups/cardio CRUD and schema migration.
 - `src/utils/workoutReadModels.js`: screen-facing workout sorting plus Library and Editor read models.
@@ -76,16 +92,19 @@ Primary layers:
 - `src/utils/timerPhase.js`: fixed session-phase and speech-announcement timing policy.
 - `src/utils/exerciseProgress.js`: checklist progress normalization/toggle helpers.
 - `src/utils/exerciseSanitizer.js`: shared editor save-time exercise normalization.
-- `src/utils/audioManager.js`: bell/countdown SFX, speech announcements, and audio keepalive handling.
+- `src/utils/audioManager.js`: web/PWA fallback bell/countdown/speech playback, playback-readiness recovery, manual sound recovery, and audio keepalive handling.
 - `src/utils/wakeLock.js`: Wake Lock integration with iPhone-safe `nosleep.js` fallback.
 - `src/constants/appState.js`: app screen and editor-return constants.
 - `netlify/functions/profile-read.js`: reads persisted workout profile.
 - `netlify/functions/profile-write.js`: writes merged workout profile updates.
+- `ios/App/App/EliteTimerRuntimePlugin.swift`: native iPhone interval runtime, background-audio keepalive, native session mirroring, and projected-session readback.
 
 ## State Ownership (High Level)
 
 - App shell state (`screen`, theme, edit context): `src/App.jsx`
 - Timer runtime state: `src/hooks/useTimer.js`
+  - cue authority is native when the Capacitor iPhone shell is present
+  - cue authority remains browser-side when running as the web/PWA build
 - Exercise checklist progress for current session: `src/components/TimerScreen.jsx`
   - persisted workout identity metadata and checklist restore policy are centralized in `src/utils/sessionResumePolicy.js`
 - Workout/warm-up/cardio canonical profile: Netlify Blobs via `netlify/functions/*` + local cache in `src/utils/workoutStorage.js`
@@ -100,8 +119,12 @@ Session/settings:
 
 - `eliteTimer_activeSession`
 - `eliteTimer_settings`
-  - `sessionMinutes`
-  - `intervalSeconds`
+  - `workoutDefaults`
+    - `sessionMinutes`
+    - `intervalSeconds`
+  - `timerOnlyDefaults`
+    - `sessionMinutes`
+    - `intervalSeconds`
 
 Workout data:
 
@@ -137,6 +160,7 @@ Behavior:
 - Local workout edits queue cloud writes (debounced) so changes become your new defaults.
 - Cloud merge ordering now resolves conflicts per section for workouts, warm-ups, and cardios.
 - If cloud is unreachable, app keeps working with local data only.
+- In the native iPhone shell, bundled web assets load from `capacitor://localhost`, so profile sync must use an explicit HTTPS Netlify base URL.
 
 ## Deploy Caveats
 
@@ -157,12 +181,17 @@ Behavior:
     - retry-on-failure cloud writes
     - lifecycle flushes on `online`, `visibilitychange`, and `pagehide`
     - section-level conflict ordering for workouts, warm-ups, and cardios
+  - keep the current R3 runtime validation open until a full physical-iPhone run confirms native cue scheduling holds through lock/app-switch conditions
+  - treat iPhone speech as native-owned now:
+    - bundled announcement assets are preserved
+    - speech should follow the same lock/app-switch reliability model as the bell
   - keep sync durability stable (no data reversion on reload/device switch)
   - keep docs and tests in lockstep with behavior changes
 - Remaining Tier 3 order:
-  1. remaining cloud profile sync conflict-model remediation
-  2. `workoutStorage.js` hub decomposition
-  3. deeper session-state structural consolidation
+  1. physical-iPhone validation and polish of the native-owned interval runtime
+  2. remaining cloud profile sync conflict-model remediation
+  3. `workoutStorage.js` hub decomposition
+  4. deeper session-state structural consolidation
 - Deferred (must-do before broader sharing):
   - add authentication/authorization guard for profile endpoints
   - choose and implement auth model (Netlify Identity JWT or signed token gate)
@@ -175,11 +204,15 @@ Behavior:
 
 ## Current Health Status
 
-Verified on **February 15, 2026**:
+Verified on **March 21, 2026**:
 
-- `npm run lint`: passing
-- `npm test`: passing (35/35)
-- `npm run build`: passing
-- `npm run test:e2e`: passing
+- broader app checks earlier in the sprint:
+  - `npm test`: passing
+  - `npm run build`: passing
+  - `npm run test:e2e`: passing
+- latest native speech closeout checks:
+  - `npm run lint`: passing
+  - `npm run ios:build`: passing
+  - `npm run ios:sim-smoke`: passing
 
 This status reflects the current branch state and should be re-verified after behavior changes.

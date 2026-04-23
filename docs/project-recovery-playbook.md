@@ -1,6 +1,6 @@
 # Project Recovery Playbook
 
-Last updated: February 15, 2026
+Last updated: March 20, 2026
 
 Use this when a project has grown quickly (feature stacking, hotfixes, drift) and needs a safe path back to stability without losing momentum.
 
@@ -102,6 +102,7 @@ Examples:
 - Lifecycle flush behavior (online/background/pagehide)
 - Auth/authorization gates for writable endpoints
 - Observability (last sync, pending writes, error counters)
+- Device-side diagnostics for browser/runtime-only failures or hybrid/native runtime failures (for example Web Audio interruption traces or native iPhone interval-runtime drift)
 
 Exit gate:
 - High-impact risks either mitigated or explicitly deferred with owner + trigger.
@@ -139,6 +140,7 @@ Exit gate:
 - `npm run build`
 - one end-to-end smoke test
 - manual smoke for browser/device-specific behavior
+- capture device-side diagnostics when the failing behavior only appears on real hardware
 
 ## Practical Operating Principles
 

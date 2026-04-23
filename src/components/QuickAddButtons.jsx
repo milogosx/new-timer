@@ -9,9 +9,14 @@ const PRESETS = [
   { label: '3:00', seconds: 180 },
 ];
 
-function QuickAddButtons({ onQuickAdd, disabled }) {
+function QuickAddButtons({ onQuickAdd, disabled, hidden = false }) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showCustom, setShowCustom] = useState(false);
   const [customValue, setCustomValue] = useState('');
+
+  if (hidden) {
+    return <div className="quick-add-inline quick-add-hidden" aria-hidden="true" />;
+  }
 
   function handleCustomSubmit(e) {
     e.preventDefault();
@@ -28,45 +33,76 @@ function QuickAddButtons({ onQuickAdd, disabled }) {
 
     if (seconds > 0) {
       onQuickAdd(seconds);
+      setIsExpanded(false);
       setShowCustom(false);
       setCustomValue('');
     }
   }
 
   return (
-    <div className="quick-add-section">
-      <div className="quick-add-buttons">
-        {PRESETS.map(({ label, seconds }) => (
-          <button
-            key={label}
-            className="quick-add-btn"
-            onClick={() => onQuickAdd(seconds)}
-            disabled={disabled}
-          >
-            {label}
-          </button>
-        ))}
-        <button
-          className="quick-add-btn quick-add-plus"
-          onClick={() => setShowCustom(!showCustom)}
-          disabled={disabled}
-        >
-          +
-        </button>
-      </div>
+    <div className="quick-add-inline">
+      <button
+        type="button"
+        className={`quick-add-trigger ${isExpanded ? 'is-open' : ''}`}
+        onClick={() => {
+          setIsExpanded((prev) => {
+            const next = !prev;
+            if (!next) {
+              setShowCustom(false);
+              setCustomValue('');
+            }
+            return next;
+          });
+        }}
+        aria-label={isExpanded ? 'Hide quick add options' : 'Show quick add options'}
+        aria-expanded={isExpanded}
+        disabled={disabled}
+      >
+        +
+      </button>
 
-      {showCustom && (
-        <form className="custom-time-form" onSubmit={handleCustomSubmit}>
-          <input
-            type="text"
-            className="custom-time-input"
-            placeholder="e.g. 2:45 or 90"
-            value={customValue}
-            onChange={(e) => setCustomValue(e.target.value)}
-            autoFocus
-          />
-          <button type="submit" className="custom-time-submit">GO</button>
-        </form>
+      {isExpanded && !disabled && (
+        <>
+          <div className="quick-add-panel">
+            <div className="quick-add-buttons">
+              {PRESETS.map(({ label, seconds }) => (
+                <button
+                  key={label}
+                  className="quick-add-btn"
+                  onClick={() => {
+                    onQuickAdd(seconds);
+                    setIsExpanded(false);
+                    setShowCustom(false);
+                    setCustomValue('');
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+              <button
+                className="quick-add-btn quick-add-plus"
+                onClick={() => setShowCustom((prev) => !prev)}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {showCustom && (
+            <form className="custom-time-form" onSubmit={handleCustomSubmit}>
+              <input
+                type="text"
+                className="custom-time-input"
+                placeholder="e.g. 2:45 or 90"
+                value={customValue}
+                onChange={(e) => setCustomValue(e.target.value)}
+                autoFocus
+                disabled={disabled}
+              />
+              <button type="submit" className="custom-time-submit" disabled={disabled}>GO</button>
+            </form>
+          )}
+        </>
       )}
     </div>
   );

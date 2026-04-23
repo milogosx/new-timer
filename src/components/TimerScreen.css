@@ -19,24 +19,35 @@
 }
 
 .timer-header-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) 126px;
   align-items: center;
   gap: var(--space-2);
 }
 
 .back-btn {
-  width: var(--space-10);
-  height: var(--space-10);
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-lg);
-  font-size: var(--text-lg);
-  font-weight: 900;
-  color: var(--text-primary);
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text-secondary);
   cursor: pointer;
   box-shadow: none;
-  transition: background 0.15s ease, filter 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   flex-shrink: 0;
+  justify-self: start;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .back-btn:active:not(:disabled) {
@@ -49,7 +60,6 @@
 }
 
 .header-titles {
-  flex: 1;
   text-align: center;
   min-width: 0;
 }
@@ -67,23 +77,28 @@
 
 .header-main {
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  font-weight: 900;
-  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
   margin: 0;
-  letter-spacing: 1px;
-  transition: color 0.5s ease, text-shadow 0.5s ease;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.4s ease;
 }
 
 .phase-warmup {
-  color: #FFA726;
-  /* Orange/Warm */
-  text-shadow: 0 0 20px rgba(255, 167, 38, 0.2);
+  color: var(--text-secondary);
 }
 
 .phase-workout {
-  color: var(--cyan);
-  text-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+  color: var(--gold);
+}
+
+.phase-timer-only {
+  color: var(--text-secondary);
 }
 
 /* Workout name — full row below */
@@ -105,6 +120,7 @@
 .timer-header-controls {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
   flex-shrink: 0;
 }
@@ -136,6 +152,100 @@
 .wake-lock-placeholder {
   background: transparent;
   opacity: 0;
+}
+
+.audio-reset-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  color: rgba(224, 230, 240, 0.68);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, filter 0.15s ease;
+}
+
+.audio-reset-btn:active:not(:disabled) {
+  filter: brightness(1.2);
+}
+
+.audio-reset-btn:disabled {
+  cursor: default;
+}
+
+.audio-reset-btn.is-working {
+  background: rgba(255, 191, 0, 0.08);
+  border-color: rgba(255, 191, 0, 0.16);
+  color: rgba(255, 215, 106, 0.9);
+}
+
+.audio-reset-btn.is-ready {
+  background: rgba(0, 230, 118, 0.14);
+  border-color: rgba(0, 230, 118, 0.24);
+  color: var(--green);
+}
+
+.audio-reset-btn.is-failed {
+  background: rgba(255, 45, 120, 0.12);
+  border-color: rgba(255, 45, 120, 0.22);
+  color: var(--pink);
+}
+
+.mute-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  color: rgba(224, 230, 240, 0.85);
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: var(--text-md);
+  line-height: 1;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, filter 0.15s ease;
+}
+
+.mute-btn:active {
+  filter: brightness(1.2);
+}
+
+.mute-btn.is-muted {
+  background: rgba(232, 134, 90, 0.1);
+  border-color: rgba(232, 134, 90, 0.25);
+  color: var(--pink);
+}
+
+.audio-reset-placeholder {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.audio-reset-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.audio-reset-btn.is-working .audio-reset-icon {
+  animation: audio-reset-spin 0.9s linear infinite;
+}
+
+@keyframes audio-reset-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Floating music FAB — bottom right */
@@ -176,30 +286,109 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--space-6);
+  padding: 0 var(--space-4);
   margin-bottom: var(--space-1);
   width: 100%;
   box-sizing: border-box;
-}
-
-.timer-info-label {
-  font-family: var(--font-display);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: var(--text-muted);
+  min-height: 32px;
 }
 
 .timer-info-elapsed {
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--text-lg);
-  font-weight: 800;
-  color: var(--text-primary);
-  letter-spacing: 1px;
+  font-weight: 400;
+  color: var(--text-muted);
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .timer-info-elapsed.is-overtime {
   color: #FFB300;
+}
+
+/* Timer-only totals display — replaces interval circle when no workout attached. */
+.timer-totals-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: var(--space-3) 0;
+  position: relative;
+}
+
+.timer-totals-ring {
+  position: relative;
+  width: min(360px, 92vw);
+  height: min(360px, 92vw);
+}
+
+.timer-totals-wrapper .progress-ring {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: opacity 0.3s ease;
+}
+
+.timer-totals-inner {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--space-4);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.timer-totals-label {
+  font-family: var(--font-display);
+  font-size: var(--text-2xs);
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.timer-totals-label-sub {
+  margin-top: var(--space-2);
+}
+
+.timer-totals-remaining {
+  font-family: var(--font-digital);
+  font-variant-numeric: tabular-nums;
+  font-size: 3.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+  line-height: 1;
+  text-shadow: 0 0 18px rgba(255, 107, 26, 0.25);
+}
+
+.timer-totals-elapsed {
+  font-family: var(--font-digital);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.timer-totals-remaining.is-overtime,
+.timer-totals-elapsed.is-overtime {
+  color: #FFB300;
+}
+
+.timer-totals-inner .countdown-number {
+  font-family: var(--font-digital);
+  font-size: 6rem;
+  font-weight: 800;
+  color: var(--amber);
+  text-shadow: 0 0 24px rgba(255, 107, 26, 0.55);
 }
 
 /* Action Row — contains Quick Add + Controls */
@@ -241,16 +430,33 @@
 }
 
 .ctrl-btn-main {
-  background: var(--pink);
-  color: #fff;
-  border-color: rgba(255, 45, 120, 0.3);
   flex: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
+.ctrl-btn-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
+}
+
+.ctrl-btn-idle,
 .ctrl-btn-running {
-  background: var(--pink);
+  background: linear-gradient(180deg, #FF8C3F 0%, #CC4E0A 100%);
   color: #fff;
-  border-color: rgba(255, 45, 120, 0.3);
+  border-color: rgba(255, 107, 26, 0.5);
+  box-shadow: 0 0 24px rgba(255, 107, 26, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.ctrl-btn-paused {
+  background: rgba(0, 230, 118, 0.16);
+  color: var(--green);
+  border-color: rgba(0, 230, 118, 0.26);
 }
 
 .ctrl-btn-pulse {

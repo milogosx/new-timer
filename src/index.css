@@ -1,59 +1,64 @@
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Montserrat:wght@700;800;900&family=Roboto+Mono:wght@500;700&display=swap');
-
 /* ═══════════════════════════════════════════════
-   DESIGN TOKENS — Dark Industrial Luxury
+   DESIGN TOKENS — Tactical Gauge (Dark)
+   Saturated amber accent, condensed caps, digital numerals.
    ═══════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
   /* ── Core Palette ── */
-  --gold: #FF2D78;
-  --gold-light: #FF5A9A;
-  --gold-dark: #D41E63;
-  --cream: #16161E;
-  --cream-warm: #1E1E2A;
-  --yellow-card: #00FFFF;
-  --yellow-dim: #00CCCC;
-  --white: #F0F0F5;
-  --black: #0A0A0F;
+  --gold: #FF6B1A;
+  --gold-light: #FF8C3F;
+  --gold-dark: #CC4E0A;
+  --cream: #15171C;
+  --cream-warm: #1B1E26;
+  --yellow-card: #FFB86B;
+  --yellow-dim: #D89855;
+  --white: #F2F4F8;
+  --black: #0A0B0E;
 
   /* ── Accent Colors ── */
-  --pink: #FF2D78;
-  --pink-dark: #D41E63;
-  --pink-stroke: #FF2D78;
-  --cyan: #00FFFF;
-  --cyan-bright: #00FFFF;
-  --cyan-soft: #66FFFF;
-  --teal: #00BFA5;
-  --green: #00E676;
-  --green-dark: #00C853;
-  --green-light: #69F0AE;
-  --orange: #FF9100;
-  --warmup-bg: #1A1A26;
-  --warmup-dark: #12121A;
-  --warmup-accent: #00FFFF;
-  --cardio-bg: #261A1A;
-  --cardio-dark: #1A1212;
-  --cardio-accent: #FF6E40;
+  --pink: #FF6B1A;
+  --pink-dark: #CC4E0A;
+  --pink-stroke: #FF8C3F;
+  --cyan: #8FA4B8;
+  --cyan-bright: #A7BAC8;
+  --cyan-soft: #6B7F92;
+  --teal: #5DAE9E;
+  --green: #5DD4A5;
+  --green-dark: #3FB289;
+  --green-light: #8FE3BE;
+  --orange: #FF6B1A;
+  --amber: #FF6B1A;
+  --amber-bright: #FF8C3F;
+  --amber-dim: #CC4E0A;
+  --amber-deep: #8F3606;
+  --warmup-bg: #1A1D24;
+  --warmup-dark: #141720;
+  --warmup-accent: #8FA4B8;
+  --cardio-bg: #241A17;
+  --cardio-dark: #1A1412;
+  --cardio-accent: #FF6B1A;
 
   /* ── Surface Colors ── */
-  --surface-base: #0A0A0F;
-  --surface-card: #16161E;
-  --surface-elevated: #1E1E2A;
-  --surface-overlay: #242436;
+  --surface-base: #0B0C10;
+  --surface-card: #15171C;
+  --surface-elevated: #1B1E26;
+  --surface-overlay: #252933;
 
   /* ── Text Colors ── */
-  --text-primary: #F0F0F5;
-  --text-secondary: #8888AA;
-  --text-muted: #555570;
-  --text-faint: #3A3A50;
-  --text-on-dark: #F0F0F5;
-  --text-on-pink: #FFFFFF;
-  --text-on-green: #0A0A0F;
+  --text-primary: #F2F4F8;
+  --text-secondary: #8D95A6;
+  --text-muted: #5C6373;
+  --text-faint: #3D434F;
+  --text-on-dark: #F2F4F8;
+  --text-on-pink: #0B0C10;
+  --text-on-green: #0B0C10;
 
   /* ── Typography ── */
-  --font-display: 'Outfit', 'Montserrat', 'Arial Black', sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'Roboto Mono', 'SF Mono', 'Courier New', monospace;
+  --font-display: "Oswald", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  --font-digital: "Orbitron", "Share Tech Mono", ui-monospace, "SF Mono", monospace;
+  --font-mono: "Orbitron", ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 
   /* Font Sizes — clear hierarchy */
   --text-2xs: 9px;
@@ -98,12 +103,15 @@
   /* Subtle inner depth for cards */
   --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
-  /* ── Glow Shadows — accent-colored ── */
-  --glow-cyan: 0 0 20px rgba(0, 255, 255, 0.3);
-  --glow-pink: 0 0 20px rgba(255, 45, 120, 0.3);
-  --glow-green: 0 0 20px rgba(0, 230, 118, 0.3);
-  --glow-cyan-lg: 0 0 40px rgba(0, 255, 255, 0.2), 0 0 80px rgba(0, 255, 255, 0.1);
-  --glow-pink-lg: 0 0 40px rgba(255, 45, 120, 0.2), 0 0 80px rgba(255, 45, 120, 0.1);
+  /* ── Glow Shadows — amber-centric ── */
+  --glow-cyan: 0 0 0 rgba(0, 0, 0, 0);
+  --glow-amber-sm: 0 0 12px rgba(255, 107, 26, 0.35);
+  --glow-amber: 0 0 24px rgba(255, 107, 26, 0.45);
+  --glow-amber-lg: 0 0 48px rgba(255, 107, 26, 0.35);
+  --glow-pink: var(--glow-amber);
+  --glow-pink-lg: var(--glow-amber-lg);
+  --glow-green: 0 0 20px rgba(93, 212, 165, 0.18);
+  --glow-cyan-lg: 0 0 0 rgba(0, 0, 0, 0);
 
   /* ── Transitions ── */
   --ease-press: transform 0.1s ease, box-shadow 0.1s ease;
@@ -111,15 +119,14 @@
   --ease-fade: opacity 0.2s ease;
 
   /* ── Background ── */
-  --bg-gradient: linear-gradient(168deg,
-      #0A0A0F 0%,
-      #0E0E18 38%,
-      #0A0A0F 62%,
-      #08080D 100%);
-  --bg-gradient-radial: radial-gradient(ellipse 120% 80% at 50% 20%,
-      #14142A 0%,
-      #0A0A0F 50%,
-      #060610 100%);
+  --bg-gradient: linear-gradient(180deg,
+      #0B0C10 0%,
+      #0C0E13 50%,
+      #0B0C10 100%);
+  --bg-gradient-radial: radial-gradient(ellipse 90% 60% at 50% 0%,
+      #15181F 0%,
+      #0B0C10 55%,
+      #08090C 100%);
 }
 
 /* Reset */
@@ -161,7 +168,7 @@ body::before {
   height: 100dvh;
   pointer-events: none;
   z-index: -1;
-  opacity: 0.035;
+  opacity: 0.015;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 256px 256px;
