@@ -18,11 +18,12 @@ function TimerCircle({
   timerMode, // 'idle' | 'running' | 'rest'
   intervalCount = 0,
 }) {
+  // Alternate pink/blue on every interval so the background visibly shifts
+  // at each boundary. Rest intervals use a cool cyan wash; idle is clear.
   let bgColor = 'transparent';
   if (circleColor === 'rest') {
     bgColor = REST_BG;
-  } else if (circleColor === 'teal') {
-    // Alternate pink/blue on each work interval (1 -> pink, 2 -> blue, ...).
+  } else if (intervalCount > 0) {
     bgColor = intervalCount % 2 === 1 ? INTERVAL_BG_PINK : INTERVAL_BG_BLUE;
   }
 
@@ -33,8 +34,8 @@ function TimerCircle({
   // Pushed outward vs. prior layout so there's breathing room between the
   // inner countdown digits and the colored ring.
   const segCount = 60;
-  const segInner = 128;
-  const segOuter = 152;
+  const segInner = 138;
+  const segOuter = 158;
   const gapDeg = 0.8;
   const segments = [];
   const elapsedSegs = Math.round(safeProgress * segCount);
