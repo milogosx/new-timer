@@ -325,7 +325,7 @@ export default function HomeScreen({
             </span>
             <span className="home-row-label">SESSION</span>
             <span className="home-row-summary">
-              {activePresetMeta.label} <span className="home-row-summary-dot">·</span> {activePresetSummary.sessionMinutes} MIN <span className="home-row-summary-dot">·</span> {activePresetSummary.intervalSeconds} SEC
+              {activePresetSummary.sessionMinutes} MIN <span className="home-row-summary-dot">·</span> {activePresetSummary.intervalSeconds} SEC
             </span>
             <span className="home-row-chev">{settingsOpen ? (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="6 15 12 9 18 15" /></svg>

@@ -585,6 +585,7 @@ export default function TimerScreen({
           progress={timer.intervalProgress}
           countdownNumber={timer.countdownNumber}
           timerMode={timerMode}
+          intervalCount={timer.intervalCount}
         />
       )}
 

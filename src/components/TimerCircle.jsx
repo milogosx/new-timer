@@ -2,11 +2,11 @@ import { memo } from 'react';
 import { formatTime } from '../utils/timerLogic';
 import './TimerCircle.css';
 
-const CIRCLE_COLORS = {
-  black: 'transparent',
-  teal: 'rgba(255, 107, 26, 0.04)',
-  rest: 'rgba(77, 208, 225, 0.04)',
-};
+// Neon pink / neon blue alternation for work intervals. Rest intervals
+// keep a cool cyan wash. Idle / pre-start stays transparent.
+const REST_BG = 'rgba(77, 208, 225, 0.10)';
+const INTERVAL_BG_PINK = 'rgba(255, 45, 120, 0.12)';
+const INTERVAL_BG_BLUE = 'rgba(56, 182, 255, 0.12)';
 
 const MODE_CLASS_MAP = { rest: 'mode-rest', idle: 'mode-idle' };
 
@@ -16,16 +16,25 @@ function TimerCircle({
   progress,
   countdownNumber,
   timerMode, // 'idle' | 'running' | 'rest'
+  intervalCount = 0,
 }) {
-  const bgColor = CIRCLE_COLORS[circleColor] || CIRCLE_COLORS.black;
+  let bgColor = 'transparent';
+  if (circleColor === 'rest') {
+    bgColor = REST_BG;
+  } else if (circleColor === 'teal') {
+    // Alternate pink/blue on each work interval (1 -> pink, 2 -> blue, ...).
+    bgColor = intervalCount % 2 === 1 ? INTERVAL_BG_PINK : INTERVAL_BG_BLUE;
+  }
 
   const safeProgress = Number.isFinite(progress) ? Math.max(0, Math.min(1, progress)) : 0;
   const modeClass = MODE_CLASS_MAP[timerMode] || 'mode-running';
 
-  // Segmented bar gauge — 60 trapezoidal segments forming a thick ring
+  // Segmented bar gauge — 60 trapezoidal segments forming a thick ring.
+  // Pushed outward vs. prior layout so there's breathing room between the
+  // inner countdown digits and the colored ring.
   const segCount = 60;
-  const segInner = 118;
-  const segOuter = 140;
+  const segInner = 128;
+  const segOuter = 152;
   const gapDeg = 0.8;
   const segments = [];
   const elapsedSegs = Math.round(safeProgress * segCount);
@@ -55,27 +64,6 @@ function TimerCircle({
       />
     );
   }
-  const labels = [
-    { n: '0', x: 160, y: 100 },
-    { n: '15', x: 260, y: 160 },
-    { n: '30', x: 160, y: 220 },
-    { n: '45', x: 60, y: 160 },
-  ].map((l) => (
-    <text
-      key={`l${l.n}`}
-      x={l.x}
-      y={l.y}
-      fill="rgba(255,255,255,0.55)"
-      fontFamily="Orbitron, monospace"
-      fontSize="13"
-      fontWeight="500"
-      textAnchor="middle"
-      dominantBaseline="middle"
-    >
-      {l.n}
-    </text>
-  ));
-
   return (
     <div className={`timer-circle-wrapper ${modeClass}`}>
       <div className="timer-circle-border">
@@ -87,7 +75,6 @@ function TimerCircle({
             </linearGradient>
           </defs>
           {segments}
-          {labels}
         </svg>
 
         <div
